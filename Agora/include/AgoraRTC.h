@@ -12,7 +12,6 @@ using namespace agora::rtc;
 using namespace agora::media;
 #define ENABLE_AGORA_RTC 1
 
-
 /**
  * @brief   The follow struct only show an interface for the event message info that the SDK 
  *          send.
@@ -142,6 +141,10 @@ struct RemoteVideoStatsInfo : public RemoteVideoStats
 {
 };
 
+struct LocalVideoStatsInfo : public LocalVideoStats
+{
+};
+
 /** 
  * @brief   The AgoraRTC uses the EventHandler interface class to send callbacks to the 
  *          application.
@@ -170,6 +173,7 @@ private:
   std::function<void(const StreamingEventInfo& _info)> m_onRtmpStreamingEvent = nullptr;
   std::function<void(const UserOfflineInfo& _info)> m_onUserOffline = nullptr;
   std::function<void(const RemoteVideoStatsInfo& _info)> m_onRemoteVideoStats = nullptr;
+  std::function<void(const LocalVideoStatsInfo& _info)> m_onLocalVideoStats = nullptr;
 
   /**
    * Class set functions-----------------------------------------------------------------------
@@ -190,6 +194,7 @@ public:
   void SetOnRtmpStreamingEvent(std::function<void(const StreamingEventInfo& _info)> _callback);
   void SetOnUserOffline(std::function<void(const UserOfflineInfo& _info)> _callback);
   void SetOnRemoteVideoStats(std::function<void(const RemoteVideoStatsInfo& _info)> _callback);
+  void SetOnLocalVideoStats(std::function<void(const LocalVideoStatsInfo& _info)> _callback);
   
   /**
    * Class functions override------------------------------------------------------------------
@@ -210,6 +215,7 @@ private:
   void onRtmpStreamingEvent(const char* url, RTMP_STREAMING_EVENT eventCode) override;
   void onUserOffline(uid_t uid, USER_OFFLINE_REASON_TYPE reason) override;
   void onRemoteVideoStats(const RemoteVideoStats& stats) override;
+  void onLocalVideoStats(const LocalVideoStats& stats) override;
 };
 
 /**
@@ -413,6 +419,22 @@ struct ScreenDevice
   int h;
 };
 
+/** 
+ * @brief   Camera capture configuration.
+ */
+struct CameraCapturerConfig : public CameraCapturerConfiguration
+{
+  
+};
+
+/**
+ * @brief   Screen capture configuration.
+ */
+struct ScreenCaptureConfig : public ScreenCaptureParameters
+{
+  
+};
+
 /**
  * @brief   This class handle the communication with Agora SDK. Also allows to disconnect the 
  *          SDK without any consequences.
@@ -442,27 +464,13 @@ private:
   /**
    * @brief   Interval report for the loudest speaker in the call.
    */
-  const int cTestInterval = 500;
+  const int cTestInterval = 250;
 
   /**
-   * @brief   cSmoth Interval.
+   * @brief   Sets the sensitivity of the audio volume indicator. The value ranges between 0 
+              and 10. The greater the value, the more sensitive the indicator.
    */
-  const int cSmothInterval = 5;
-
-  /**
-   * @brief   The maximum encoding dimensions of the shared region in terms of width.
-   */
-  const int cEncodingWidth = 1980;
-
-  /**
-   * @brief   The maximum encoding dimensions of the shared region in terms of height.
-   */
-  const int cEncodingHeight = 1080;
-
-  /**
-   * @brief   The maximum encoding frame rate.
-   */
-  const int cEncodingFPS = 15;
+  const int cSmothInterval = 2;
 
 public:
   /**
@@ -643,6 +651,14 @@ public:
   int SetVideoEncoderConfiguration(const VideoEncoderConfig& _config);
 
   /**
+   * @brief   Updates the screen sharing parameters.
+   * @param   #ScreenCaptureConfig: Video encoding settings
+   * @bug     No know Bugs.
+   * @return  #int: Agora status code.
+   */
+  int SetScreenCaptureConfig(const ScreenCaptureConfig& _config);
+
+  /**
    * @brief   Sets the role of the user, such as a host or an audience (default), before/
    *          after joining a channel in a live broadcast.
    * @param   #eCLIENT_ROLE: New client role.
@@ -670,13 +686,20 @@ public:
   int SetRemoteVideoPriority(const unsigned int _userID, const eREMOTE_VIDEO_PRIORITY _priorityType);
 
   /**
-   * @brief   Set an audio effect to the audio stream
-   * @param   #unsigned int: The user ID.
-   * @param   #bool: Enable flag.
+   * @brief   Set an audio effect to the audio stream.
+   * @param   #eAUDIO_EFFECT: The Auto effect to apply to.
    * @bug     No know Bugs.
    * @return  #int: Agora status code.
    */
   int SetAudioEffect(const eAUDIO_EFFECT _effect);
+
+  /**
+   * @brief   Sets the camera capture configuration.
+   * @param   #CameraCapturerConfig: Capture config for the camera.
+   * @bug     No know Bugs.
+   * @return  #int: Agora status code.
+   */
+  int SetCameraCapturerConfiguration(const CameraCapturerConfig& _effect);
 
   /**
    * @brief   Enable the super resolution video algorithm to specific user
@@ -693,7 +716,7 @@ public:
    * @bug     No know Bugs.
    * @return  #int: Agora status code.
    */
-  int EnableScreenShare(const bool _switchFlag);
+  int EnableScreenShare(const bool _switchFlag, const ScreenCaptureConfig& _config);
 
   /**
    * @brief   Stop/Resume local audio stream.

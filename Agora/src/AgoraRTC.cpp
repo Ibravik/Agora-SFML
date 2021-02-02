@@ -75,6 +75,11 @@ void EventHandler::SetOnRemoteVideoStats(std::function<void(const RemoteVideoSta
   m_onRemoteVideoStats = std::move(_callback);
 }
 
+void EventHandler::SetOnLocalVideoStats(std::function<void(const LocalVideoStatsInfo& _info)> _callback)
+{
+  m_onLocalVideoStats = std::move(_callback);
+}
+
 void EventHandler::onWarning(int warn, const char* msg)
 {
   if (m_onWarning != nullptr)
@@ -321,6 +326,30 @@ void EventHandler::onRemoteVideoStats(const RemoteVideoStats& stats)
     info.publishDuration = stats.publishDuration;
 
     m_onRemoteVideoStats(info);
+  }
+}
+
+void EventHandler::onLocalVideoStats(const LocalVideoStats& stats)
+{
+  if (m_onLocalVideoStats != nullptr)
+  {
+    LocalVideoStatsInfo info;
+    info.sentBitrate = stats.sentBitrate;
+    info.sentFrameRate = stats.sentFrameRate;
+    info.encoderOutputFrameRate = stats.encoderOutputFrameRate;
+    info.rendererOutputFrameRate = stats.rendererOutputFrameRate;
+    info.targetBitrate = stats.targetBitrate;
+    info.targetFrameRate = stats.targetFrameRate;
+    info.qualityAdaptIndication = stats.qualityAdaptIndication;
+    info.encodedBitrate = stats.encodedBitrate;
+    info.encodedFrameWidth = stats.encodedFrameWidth;
+    info.encodedFrameHeight = stats.encodedFrameHeight;
+    info.encodedFrameCount = stats.encodedFrameCount;
+    info.codecType = stats.codecType;
+    info.txPacketLossRate = stats.txPacketLossRate;
+    info.captureFrameRate = stats.captureFrameRate;
+
+    m_onLocalVideoStats(info);
   }
 }
 
@@ -1115,6 +1144,22 @@ int AgoraRTC::SetVideoEncoderConfiguration(const VideoEncoderConfig& _config)
   return m_RtcEngine->setVideoEncoderConfiguration(_config);
 }
 
+int AgoraRTC::SetScreenCaptureConfig(const ScreenCaptureConfig& _config)
+{
+#if (ENABLE_AGORA_RTC == 0)
+  return 0;
+#endif
+
+  // avoid bad calls if the engine are not ready
+  if (m_RtcEngine == nullptr)
+  {
+    return -1;
+}
+
+  // set the config in engine
+  return m_RtcEngine->updateScreenCaptureParameters(_config);
+}
+
 int AgoraRTC::SetClientRole(const eCLIENT_ROLE _roleType)
 {
 #if (ENABLE_AGORA_RTC == 0)
@@ -1203,6 +1248,22 @@ int AgoraRTC::SetAudioEffect(const eAUDIO_EFFECT _effect)
   return result;
 }
 
+int AgoraRTC::SetCameraCapturerConfiguration(const CameraCapturerConfig& _effect)
+{
+#if (ENABLE_AGORA_RTC == 0)
+  return 0;
+#endif
+
+  // avoid bad calls if the engine are not ready
+  if (m_RtcEngine == nullptr)
+  {
+    return -1;
+}
+
+  // start/stop the preview local feed visualization
+  return m_RtcEngine->setCameraCapturerConfiguration(_effect);
+}
+
 int AgoraRTC::EnableRemoteVideoSuperResolution(const unsigned int _userID, const bool _switchFlag)
 {
 #if (ENABLE_AGORA_RTC == 0)
@@ -1219,7 +1280,7 @@ int AgoraRTC::EnableRemoteVideoSuperResolution(const unsigned int _userID, const
   return m_RtcEngine->enableRemoteSuperResolution(_userID, _switchFlag);
 }
 
-int AgoraRTC::EnableScreenShare(const bool _switchFlag)
+int AgoraRTC::EnableScreenShare(const bool _switchFlag, const ScreenCaptureConfig& _config)
 {
 #if (ENABLE_AGORA_RTC == 0)
   return 0;
@@ -1246,8 +1307,6 @@ int AgoraRTC::EnableScreenShare(const bool _switchFlag)
     return result;
   }
 
-  // set default encoding settings
-  ScreenCaptureParameters captureParams;
 #if defined(_WIN32)
   // get main screen settings
   RECT rc;
@@ -1263,7 +1322,7 @@ int AgoraRTC::EnableScreenShare(const bool _switchFlag)
   // start/stop the feature
   if (_switchFlag)
   {
-    result = m_RtcEngine->startScreenCaptureByScreenRect(world, local, captureParams);
+    result = m_RtcEngine->startScreenCaptureByScreenRect(world, local, _config);
   }
   else
   {

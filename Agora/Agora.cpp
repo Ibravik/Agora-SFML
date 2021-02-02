@@ -12,19 +12,20 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Graphics/Texture.hpp>
 
+// Misc settings
 const int stringLength = 2048;
 
-// Main window
+// Main window settings
 sf::RenderWindow g_MainWindow;
 sf::Clock g_DeltaClock;
 sf::Clock g_Time;
-bool g_MainMenu = true;
 
-// channel settings
-int g_ClientRole = 0;
-bool g_ChannelSettingsFlag = false;
+// Grid window settings
+bool g_GridFlag = true;
+
+// channel window settings
+bool g_ChannelFlag = false;
 int g_MaxChannelTabs = 1;
-struct frameBuffer;
 struct channelSettings 
 {
   bool onCall;
@@ -63,6 +64,7 @@ struct channelSettings
     rtmpAudioBitrate(48),
     rtmpAudioChannels(0){}
 };
+ImVector<channelSettings> g_ChannelTabs;
 std::vector<std::string> g_EncryptionTypes { 
   std::string("aes-128-xts"), 
   std::string("aes-128-ecb"),
@@ -79,68 +81,33 @@ std::vector<std::string> g_AudioChannels{
   std::string("Mono"),
   std::string("Stereo")
 };
-ImVector<channelSettings> g_ChannelTabs;
 
-// Agora settings
+// device window settings
+bool g_SettingsFlag = false;
 bool g_EnableVideoTest = false;
 bool g_EnableAudioTest = false;
 int g_ConnectedChannels = 0;
-bool g_SettingsFlag = false;
-bool g_LocalVideoStreamMute = false;
-bool g_LocalAudioStreamMute = false;
-bool g_ScreenShare = false;
-int g_VoiceEffect = 0;
 std::vector<std::string> g_VideoRecordingDeviceList;
 std::vector<std::string> g_AudioRecordingDeviceList;
 std::vector<std::string> g_AudioPlaybackDeviceList;
 std::vector<std::string> g_ScreenDeviceList;
-struct encoderConfig
-{
-  int width;
-  int height;
-  int frameRate;
-  int minFrameRate;
-  int bitrate;
-  int minBitrate;
-  int orientationMode;
-  int degradationPreference;
-  int mirrorMode;
-
-  encoderConfig() :
-    width(640),
-    height(360),
-    frameRate(3),
-    minFrameRate(-1),
-    bitrate(0), 
-    minBitrate(-1), 
-    degradationPreference(0),
-    mirrorMode(0) {}
-};
 std::vector<int> g_FrameRate{
   1, 7, 10, 15, 24, 30, 60
 };
-std::map<int, std::string> g_DegradationPreference{
-  { 0, "Maintain Quality" }, 
-  { 1, "Maintain Framerate" },
-  { 2, "Maintain Balanced" }
+std::vector<std::string> g_DegradationPreference{
+  "Maintain Quality" , "Maintain Framerate", "Maintain Balanced"
 };
-std::map<int, std::string> g_VideoMirror{
-  { 0, "Mirror Mode Auto" },
-  { 1, "Mirror Mode Enabled" },
-  { 2, "Mirror Mode Disabled" }
+std::vector<std::string> g_VideoMirror{
+  "Mirror Mode Auto", "Mirror Mode Enabled", "Mirror Mode Disabled"
 };
-std::map<int, std::string> g_VoiceEffects{
-  { 0, "Off" },
-  { 1, "Uncle" },
-  { 2, "Old Man" },
-  { 3, "Boy" },
-  { 4, "Sister" },
-  { 5, "Girl" },
-  { 6, "Pig King " },
-  { 7, "Hulk" },
+std::vector<std::string> g_VoiceEffects{
+  "Off", "Uncle", "Old Man", "Boy", "Sister", "Girl", "Pig King", "Hulk"
+};
+std::vector<std::string> g_CaptureConfig{
+  "Auto", "Performance", "Preview"
 };
 
-// Frame buffer
+// Frame settings
 sf::Vector2f g_LocalFrameMaxSize(320.0f, 180.0f);
 sf::Vector2f g_FrameMaxSize(240.0f, 135.0f);
 struct frameBuffer
@@ -158,11 +125,8 @@ struct frameBuffer
   }
 };
 
-// local frame
-frameBuffer g_LocalFrame;
-
-// Remote user Info
-struct remoteUser
+// user info settings
+struct userInfo
 {
   frameBuffer frame;
   bool audioStreamMute;
@@ -170,25 +134,32 @@ struct remoteUser
   bool videoStreamQuality;
   bool videoStreamPriority;
   bool videoSuperResolution;
+  bool screenShare;
   int fps;
   int width;
   int height;
   int bitrate;
+  int clientRole;
+  int voiceEffect;
 
-  remoteUser() : 
+  userInfo() :
     audioStreamMute(false),
     videoStreamMute(false),
     videoStreamQuality(false),
     videoStreamPriority(false),
     videoSuperResolution(false),
+    screenShare(false),
     fps(0),
     width(0),
     height(0),
-    bitrate(0){}
+    bitrate(0),
+    clientRole(0),
+    voiceEffect(0){}
 };
 
-// remote frame
-std::map<unsigned int, remoteUser> g_RemoteFrame;
+// Users
+userInfo g_LocalUser;
+std::map<unsigned int, userInfo> g_RemoteUser;
 
 // Agora logs callbacks------------------------------------------------------------------------
 
@@ -322,23 +293,32 @@ void onUserOffline(const UserOfflineInfo& _info)
   }
 
   // erase the remote user info
-  if (g_RemoteFrame.find(_info.uid) != g_RemoteFrame.end())
+  if (g_RemoteUser.find(_info.uid) != g_RemoteUser.end())
   {
-    g_RemoteFrame.erase(_info.uid);
+    g_RemoteUser.erase(_info.uid);
   }
 }
 
-void onRemoteVideoStats(const RemoteVideoStats& _info)
+void onRemoteVideoStats(const RemoteVideoStatsInfo& _info)
 {
   // update the remote user info
-  if (g_RemoteFrame.find(_info.uid) != g_RemoteFrame.end())
+  if (g_RemoteUser.find(_info.uid) != g_RemoteUser.end())
   {
-    auto &remote = g_RemoteFrame.at(_info.uid);
+    auto &remote = g_RemoteUser.at(_info.uid);
     remote.bitrate = _info.receivedBitrate;
     remote.fps = _info.decoderOutputFrameRate;
     remote.width = _info.width;
     remote.height = _info.height;
   }
+}
+
+void onLocalVideoStats(const LocalVideoStatsInfo& _info)
+{
+  // update the remote user info
+  g_LocalUser.bitrate = _info.encodedBitrate;
+  g_LocalUser.fps = _info.encoderOutputFrameRate;
+  g_LocalUser.width = _info.encodedFrameWidth;
+  g_LocalUser.height = _info.encodedFrameHeight;
 }
 
 // --------------------------------------------------------------------------------------------
@@ -456,7 +436,7 @@ void showChannelTab(bool& _isOpen, channelSettings& _channel)
     ImGui::Separator();
 
     // the stream settings only are possible if the client are a broadcaster
-    if (g_ClientRole == 0)
+    if (g_LocalUser.clientRole == 0)
     {
       // Dimension
       static int vec2[2] = { 640, 480 };
@@ -614,14 +594,14 @@ void showChannelTab(bool& _isOpen, channelSettings& _channel)
             agoraObj.EnableAudioRecordingTest(g_EnableAudioTest);
           }
           
-          agoraObj.MuteLocalVideoStream(g_LocalVideoStreamMute);
-          agoraObj.MuteLocalAudioStream(g_LocalAudioStreamMute);
+          agoraObj.MuteLocalVideoStream(g_LocalUser.videoStreamMute);
+          agoraObj.MuteLocalAudioStream(g_LocalUser.audioStreamMute);
           ChannelParams channelParams;
           channelParams.channelName = _channel.channelName;
           channelParams.clientID = _channel.clientID;
           channelParams.encryptionKey = _channel.encryptionKey;
           channelParams.encryptionType = _channel.encryptionType;
-          channelParams.clientRole = g_ClientRole == 0 ? eCLIENT_ROLE::kBROADCASTER : eCLIENT_ROLE::kAUDIENCE;
+          channelParams.clientRole = g_LocalUser.clientRole == 0 ? eCLIENT_ROLE::kBROADCASTER : eCLIENT_ROLE::kAUDIENCE;
           agoraObj.JoinChannel(channelParams);
           
           g_ConnectedChannels++;
@@ -630,7 +610,7 @@ void showChannelTab(bool& _isOpen, channelSettings& _channel)
         {
           _channel.streaming = false;
           agoraObj.LeaveChannel();
-          g_RemoteFrame.clear();
+          g_RemoteUser.clear();
           g_ConnectedChannels--;
         }
       }
@@ -654,7 +634,7 @@ void channelSettingWindow()
   ImGui::SetNextWindowPos(ImVec2(0.0f, 20.0f), ImGuiCond_Always);
 
   // show settings window
-  if (ImGui::Begin("Channel Settings", &g_ChannelSettingsFlag, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+  if (ImGui::Begin("Channel Settings", &g_ChannelFlag, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
                                                                ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize | 
                                                                ImGuiWindowFlags_NoSavedSettings))
   {
@@ -662,15 +642,15 @@ void channelSettingWindow()
     ImGui::Text("The config for each channel.");
 
     // client role
-    if (ImGui::BeginCombo("Client Role", g_ClientRoles.at(g_ClientRole).c_str()))
+    if (ImGui::BeginCombo("Client Role", g_ClientRoles.at(g_LocalUser.clientRole).c_str()))
     {
       for (int i = 0; i < g_ClientRoles.size(); i++)
       {
-        const bool isFocus = (g_ClientRole == i);
+        const bool isFocus = (g_LocalUser.clientRole == i);
         if (ImGui::Selectable(g_ClientRoles.at(i).c_str(), isFocus))
         {
-          g_ClientRole = i;
-          GetAgoraRTC().SetClientRole(g_ClientRole == 0 ? eCLIENT_ROLE::kBROADCASTER : eCLIENT_ROLE::kAUDIENCE);
+          g_LocalUser.clientRole = i;
+          GetAgoraRTC().SetClientRole(g_LocalUser.clientRole == 0 ? eCLIENT_ROLE::kBROADCASTER : eCLIENT_ROLE::kAUDIENCE);
         }
         if (isFocus)
         {
@@ -796,6 +776,276 @@ void showDeviceComboBox(eDEVICE_TYPE _deviceType, int& _index, std::vector<std::
   }
 }
 
+void videoConfig()
+{
+  AgoraRTC& agoraObj = GetAgoraRTC();
+  static ScreenCaptureConfig screenCapture;
+  static VideoEncoderConfig encoder;
+
+  // enable screen share
+  if (ImGui::Checkbox(g_LocalUser.screenShare ? "Disable Screen Share" : "Enable Screen Share", &g_LocalUser.screenShare))
+  {
+    agoraObj.EnableScreenShare(g_LocalUser.screenShare, screenCapture);
+  }
+
+  // enable local video stream
+  if (ImGui::Checkbox(g_LocalUser.videoStreamMute ? "Unmute local video stream" : "Mute local video stream", &g_LocalUser.videoStreamMute))
+  {
+    agoraObj.MuteLocalVideoStream(g_LocalUser.videoStreamMute);
+  }
+  ImGui::Separator();
+
+  if (g_LocalUser.screenShare)
+  {
+    static int screenIndex = 0;
+    static int screenSize[2] = { screenCapture.dimensions.width, screenCapture.dimensions.height };
+
+    // screen capture settings
+    showDeviceComboBox(eDEVICE_TYPE::kScreen, screenIndex, g_ScreenDeviceList);
+    if (ImGui::InputInt2("Video frame dimensions(w/h)", screenSize))
+    {
+      screenSize[0] = (screenSize[0] < 0 ? 0 : screenSize[0]);
+      screenSize[1] = (screenSize[1] < 0 ? 0 : screenSize[1]);
+    }
+    if (ImGui::InputInt("FPS", &screenCapture.frameRate))
+    {
+      screenCapture.frameRate = (screenCapture.frameRate < -1 ? -1 : screenCapture.frameRate);
+    }
+    if (ImGui::InputInt("Video encoding bitrate", &screenCapture.bitrate))
+    {
+      screenCapture.bitrate = (screenCapture.bitrate < -1 ? -1 : screenCapture.bitrate);
+    }
+    ImGui::Checkbox(screenCapture.captureMouseCursor ? "Disable Mouse Capture" : "Enable Mouse Capture", &screenCapture.captureMouseCursor);
+    ImGui::Separator();
+    if (ImGui::Button("Apply Screen Capture Settings"))
+    {
+      screenCapture.dimensions.width = screenSize[0];
+      screenCapture.dimensions.height = screenSize[1];
+      agoraObj.SetScreenCaptureConfig(screenCapture);
+    }
+  }
+  else
+  {
+    static int videoRecordingIndex = 0;
+    static int videoSize[2] = { encoder.dimensions.width, encoder.dimensions.height };
+    static int frIndex = 3;
+    static int degIndex = 0;
+    static int mirrIndex = 0;
+    static int capIndex = 0;
+
+    // video settings
+    showDeviceComboBox(eDEVICE_TYPE::kVideoRecording, videoRecordingIndex, g_VideoRecordingDeviceList);
+    if (ImGui::InputInt2("Video frame dimensions(w/h)", videoSize))
+    {
+      videoSize[0] = (videoSize[0] < 0 ? 0 : videoSize[0]);
+      videoSize[1] = (videoSize[1] < 0 ? 0 : videoSize[1]);
+      encoder.dimensions.width = videoSize[0];
+      encoder.dimensions.height = videoSize[1];
+    }
+    if (ImGui::BeginCombo("FPS", std::to_string(g_FrameRate.at(frIndex)).c_str()))
+    {
+      for (int i = 0; i < g_FrameRate.size(); i++)
+      {
+        const bool isFocus = (frIndex == i);
+        if (ImGui::Selectable(std::to_string(g_FrameRate.at(i)).c_str(), isFocus))
+        {
+          frIndex = i;
+        }
+        if (isFocus)
+        {
+          ImGui::SetItemDefaultFocus();
+        }
+      }
+      ImGui::EndCombo();
+    }
+    if (ImGui::InputInt("Minimum frame rate", &encoder.minFrameRate))
+    {
+      encoder.minFrameRate = (encoder.minFrameRate < -1 ? -1 : encoder.minFrameRate);
+    }
+    if (ImGui::InputInt("Video encoding bitrate", &encoder.bitrate))
+    {
+      encoder.bitrate = (encoder.bitrate < -1 ? -1 : encoder.bitrate);
+    }
+    if (ImGui::InputInt("Minimum encoding bitrate ", &encoder.minBitrate))
+    {
+      encoder.minBitrate = (encoder.minBitrate < -1 ? -1 : encoder.minBitrate);
+    }
+    if (ImGui::BeginCombo("Degradation Preference", g_DegradationPreference.at(degIndex).c_str()))
+    {
+      for (int i = 0; i < g_DegradationPreference.size(); i++)
+      {
+        const bool isFocus = (degIndex == i);
+        if (ImGui::Selectable(g_DegradationPreference.at(i).c_str(), isFocus))
+        {
+          degIndex = i;
+        }
+        if (isFocus)
+        {
+          ImGui::SetItemDefaultFocus();
+        }
+      }
+      ImGui::EndCombo();
+    }
+    if (ImGui::BeginCombo("Mirror Mode", g_VideoMirror.at(mirrIndex).c_str()))
+    {
+      for (int i = 0; i < g_VideoMirror.size(); i++)
+      {
+        const bool isFocus = (mirrIndex == i);
+        if (ImGui::Selectable(g_VideoMirror.at(i).c_str(), isFocus))
+        {
+          mirrIndex = i;
+        }
+        if (isFocus)
+        {
+          ImGui::SetItemDefaultFocus();
+        }
+      }
+      ImGui::EndCombo();
+    }
+    if (ImGui::BeginCombo("Camera capture config", g_CaptureConfig.at(capIndex).c_str()))
+    {
+      for (int i = 0; i < g_CaptureConfig.size(); i++)
+      {
+        const bool isFocus = (capIndex == i);
+        if (ImGui::Selectable(g_CaptureConfig.at(i).c_str(), isFocus))
+        {
+          capIndex = i;
+
+          CameraCapturerConfig config;
+          config.preference = static_cast<CAPTURER_OUTPUT_PREFERENCE>(capIndex);
+          agoraObj.SetCameraCapturerConfiguration(config);
+        }
+        if (isFocus)
+        {
+          ImGui::SetItemDefaultFocus();
+        }
+      }
+      ImGui::EndCombo();
+    }
+    ImGui::Separator();
+    if (ImGui::Button("Apply Encoding Settings"))
+    {
+      encoder.degradationPreference = static_cast<DEGRADATION_PREFERENCE>(degIndex);
+      encoder.frameRate = static_cast<FRAME_RATE>(g_FrameRate.at(frIndex));
+      encoder.mirrorMode = static_cast<VIDEO_MIRROR_MODE_TYPE>(mirrIndex);
+      agoraObj.SetVideoEncoderConfiguration(encoder);
+    }
+  }
+  ImGui::Separator();
+  
+  if (g_ConnectedChannels <= 0)
+  {
+    // Enable video device test
+    if (ImGui::Checkbox(g_EnableVideoTest ? "Disable device test" : "Enable device test", &g_EnableVideoTest))
+    {
+      agoraObj.EnableVideoRecordingTest(g_EnableVideoTest);
+    }
+
+    // video test image
+    if (g_EnableVideoTest)
+    {
+      static sf::Color videoUnmute(0xffffffff);
+      static sf::Color videoMute(0x222222ff);
+
+      ImGui::Image(g_LocalUser.frame.texture, g_LocalFrameMaxSize,
+                   (g_LocalUser.videoStreamMute ? videoMute : videoUnmute));
+    }
+  }
+}
+
+void audioConfig()
+{
+  AgoraRTC& agoraObj = GetAgoraRTC();
+
+  // The combo box for audio recording
+  static int audioRecordingIndex = 0;
+  showDeviceComboBox(eDEVICE_TYPE::kAudioRecording, audioRecordingIndex, g_AudioRecordingDeviceList);
+
+  // The audio recording volume slider
+  float recordingVolume = agoraObj.GetAudioRecordingVolume();
+  if (ImGui::SliderFloat("Recording Volume", &recordingVolume, 0.0f, 1.0f))
+  {
+    agoraObj.SetAudioRecordingVolume(recordingVolume);
+  }
+  ImGui::Separator();
+
+  // The combo box for audio playback
+  static int audioPlaybackIndex = 0;
+  showDeviceComboBox(eDEVICE_TYPE::kAudioPlayback, audioPlaybackIndex, g_AudioPlaybackDeviceList);
+
+  // The audio playback volume slider
+  float playbackVolume = agoraObj.GetAudioPlaybackVolume();
+  if (ImGui::SliderFloat("Playback Volume", &playbackVolume, 0.0f, 1.0f))
+  {
+    agoraObj.SetAudioPlaybackVolume(playbackVolume);
+  }
+  ImGui::Separator();
+
+  // audio effect
+  if (ImGui::BeginCombo("Voice effect", g_VoiceEffects.at(g_LocalUser.voiceEffect).c_str()))
+  {
+    for (int i = 0; i < g_VoiceEffects.size(); i++)
+    {
+      const bool isFocus = (g_LocalUser.voiceEffect == i);
+      if (ImGui::Selectable(g_VoiceEffects.at(i).c_str(), isFocus))
+      {
+        g_LocalUser.voiceEffect = i;
+        eAUDIO_EFFECT effect = eAUDIO_EFFECT::AUDIO_EFFECT_OFF;
+        switch (g_LocalUser.voiceEffect)
+        {
+        case 1:
+          effect = eAUDIO_EFFECT::VOICE_CHANGER_EFFECT_UNCLE;
+          break;
+        case 2:
+          effect = eAUDIO_EFFECT::VOICE_CHANGER_EFFECT_OLDMAN;
+          break;
+        case 3:
+          effect = eAUDIO_EFFECT::VOICE_CHANGER_EFFECT_BOY;
+          break;
+        case 4:
+          effect = eAUDIO_EFFECT::VOICE_CHANGER_EFFECT_SISTER;
+          break;
+        case 5:
+          effect = eAUDIO_EFFECT::VOICE_CHANGER_EFFECT_GIRL;
+          break;
+        case 6:
+          effect = eAUDIO_EFFECT::VOICE_CHANGER_EFFECT_PIGKING;
+          break;
+        case 7:
+          effect = eAUDIO_EFFECT::VOICE_CHANGER_EFFECT_HULK;
+          break;
+        default:
+          effect = eAUDIO_EFFECT::AUDIO_EFFECT_OFF;
+          break;
+        }
+        agoraObj.SetAudioEffect(effect);
+      }
+      if (isFocus)
+      {
+        ImGui::SetItemDefaultFocus();
+      }
+    }
+    ImGui::EndCombo();
+  }
+
+  // enable local audio stream
+  std::string state = (g_LocalUser.audioStreamMute ? std::string("Unmute") : std::string("Mute"));
+  if (ImGui::Checkbox((state + std::string(" local audio stream")).c_str(), &g_LocalUser.audioStreamMute))
+  {
+    agoraObj.MuteLocalAudioStream(g_LocalUser.audioStreamMute);
+  }
+
+  // enable audio device test
+  if (g_ConnectedChannels <= 0)
+  {
+    state = (g_EnableAudioTest ? std::string("Disable") : std::string("Enable"));
+    if (ImGui::Checkbox((state + std::string(" device test")).c_str(), &g_EnableAudioTest))
+    {
+      agoraObj.EnableAudioRecordingTest(g_EnableAudioTest);
+    }
+  }
+}
+
 void settingsWindow()
 {
   AgoraRTC& agoraObj = GetAgoraRTC();
@@ -809,273 +1059,17 @@ void settingsWindow()
     // show the tab menu
     if (ImGui::BeginTabBar("Settings Tab", ImGuiTabBarFlags_None))
     {
-      // encoder settings tab
-      if (ImGui::BeginTabItem("Encoder settings"))
-      {
-        static encoderConfig encoder;
-
-        // description
-        ImGui::Text("Video encoder configurations.");
-
-        // Dimension
-        static int vec2[2] = { 640, 480 };
-        if (ImGui::InputInt2("Video frame dimensions(w/h)", vec2))
-        {
-          if (vec2[0] < 0)
-          {
-            vec2[0] = 0;
-          }
-          if (vec2[1] < 0)
-          {
-            vec2[1] = 0;
-          }
-          encoder.width = vec2[0];
-          encoder.height = vec2[1];
-        }
-
-        // Frame rate
-        if (ImGui::BeginCombo("FPS", std::to_string(g_FrameRate.at(encoder.frameRate)).c_str()))
-        {
-          for (int i = 0; i < g_FrameRate.size(); i++)
-          {
-            const bool isFocus = (encoder.frameRate == i);
-            if (ImGui::Selectable(std::to_string(g_FrameRate.at(i)).c_str(), isFocus))
-            {
-              encoder.frameRate = i;
-            }
-            if (isFocus)
-            {
-              ImGui::SetItemDefaultFocus();
-            }
-          }
-          ImGui::EndCombo();
-        }
-
-        // min frame
-        if (ImGui::InputInt("Minimum frame rate", &encoder.minFrameRate))
-        {
-          if (encoder.minFrameRate < -1)
-          {
-            encoder.minFrameRate = -1;
-          }
-        }
-
-        // bitrate
-        if (ImGui::InputInt("Video encoding bitrate", &encoder.bitrate))
-        {
-          if (encoder.bitrate < -1)
-          {
-            encoder.bitrate = -1;
-          }
-        }
-
-        // min bitrate
-        if (ImGui::InputInt("Minimum encoding bitrate ", &encoder.minBitrate))
-        {
-          if (encoder.minBitrate < -1)
-          {
-            encoder.minBitrate = -1;
-          }
-        }
-
-        // degradation preference
-        if (ImGui::BeginCombo("Degradation Preference", g_DegradationPreference.at(encoder.degradationPreference).c_str()))
-        {
-          for (int i = 0; i < g_DegradationPreference.size(); i++)
-          {
-            const bool isFocus = (encoder.degradationPreference == i);
-            if (ImGui::Selectable(g_DegradationPreference.at(i).c_str(), isFocus))
-            {
-              encoder.degradationPreference = i;
-            }
-            if (isFocus)
-            {
-              ImGui::SetItemDefaultFocus();
-            }
-          }
-          ImGui::EndCombo();
-        }
-
-        // degradation preference
-        if (ImGui::BeginCombo("Mirror Mode", g_VideoMirror.at(encoder.mirrorMode).c_str()))
-        {
-          for (int i = 0; i < g_VideoMirror.size(); i++)
-          {
-            const bool isFocus = (encoder.mirrorMode == i);
-            if (ImGui::Selectable(g_VideoMirror.at(i).c_str(), isFocus))
-            {
-              encoder.mirrorMode = i;
-            }
-            if (isFocus)
-            {
-              ImGui::SetItemDefaultFocus();
-            }
-          }
-          ImGui::EndCombo();
-        }
-        ImGui::Separator();
-
-        // apply the encoding settings
-        if (ImGui::Button("Apply Encoding Settings"))
-        {
-          VideoEncoderConfig config;
-          config.bitrate = encoder.bitrate;
-          config.degradationPreference = static_cast<DEGRADATION_PREFERENCE>(encoder.degradationPreference);
-          config.dimensions = VideoDimensions(encoder.width, encoder.height);
-          config.frameRate = static_cast<FRAME_RATE>(g_FrameRate.at(encoder.frameRate));
-          config.minBitrate = encoder.minBitrate;
-          config.minFrameRate = encoder.minFrameRate;
-          config.mirrorMode = static_cast<VIDEO_MIRROR_MODE_TYPE>(encoder.mirrorMode);
-          agoraObj.SetVideoEncoderConfiguration(config);
-        }
-        ImGui::EndTabItem();
-      }
-
       // video settings tab
       if (ImGui::BeginTabItem("Video settings"))
       {
-        // The combo box for video recording/screen share
-        static int videoRecordingIndex = 0;
-        static int screenIndex = 0;
-        if (g_ScreenShare)
-        {
-          ImGui::LabelText("Video Recording", g_VideoRecordingDeviceList.empty() ? "No Device Connected" :
-                                              g_VideoRecordingDeviceList.at(videoRecordingIndex).c_str());
-          ImGui::Separator();
-          showDeviceComboBox(eDEVICE_TYPE::kScreen, screenIndex, g_ScreenDeviceList);
-        }
-        else
-        {
-          showDeviceComboBox(eDEVICE_TYPE::kVideoRecording, videoRecordingIndex, g_VideoRecordingDeviceList);
-          ImGui::Separator();
-          ImGui::LabelText("Screen Share", g_ScreenDeviceList.empty() ? "No Device Connected" : 
-                                           g_ScreenDeviceList.at(screenIndex).c_str());
-        }
-
-        // enable screen share
-        std::string state = (g_ScreenShare ? std::string("Disable") : std::string("Enable"));
-        if (ImGui::Checkbox((state + std::string(" Screen Share")).c_str(), &g_ScreenShare))
-        {
-          agoraObj.EnableScreenShare(g_ScreenShare);
-        }
-        ImGui::Separator();
-        
-        // enable local video stream
-        state = (g_LocalVideoStreamMute ? std::string("Unmute") : std::string("Mute"));
-        if (ImGui::Checkbox((state + std::string(" local video stream")).c_str(), &g_LocalVideoStreamMute))
-        {
-          agoraObj.MuteLocalVideoStream(g_LocalVideoStreamMute);
-        }
-
-        if (g_ConnectedChannels <= 0)
-        {
-          // Enable video device test
-          state = (g_EnableVideoTest ? std::string("Disable") : std::string("Enable"));
-          if (ImGui::Checkbox((state + std::string(" device test")).c_str(), &g_EnableVideoTest))
-          {
-            agoraObj.EnableVideoRecordingTest(g_EnableVideoTest);
-          }
-
-          // video test image
-          if (g_EnableVideoTest)
-          {
-            ImGui::Image(g_LocalFrame.texture, g_LocalFrameMaxSize);
-          }
-        }
-        
+        videoConfig();
         ImGui::EndTabItem();
       }
 
       // audio settings tab
       if (ImGui::BeginTabItem("Audio settings"))
       {
-        // The combo box for audio recording
-        static int audioRecordingIndex = 0;
-        showDeviceComboBox(eDEVICE_TYPE::kAudioRecording, audioRecordingIndex, g_AudioRecordingDeviceList);
-
-        // The audio recording volume slider
-        float recordingVolume = agoraObj.GetAudioRecordingVolume();
-        if (ImGui::SliderFloat("Recording Volume", &recordingVolume, 0.0f, 1.0f))
-        {
-          agoraObj.SetAudioRecordingVolume(recordingVolume);
-        }       
-        ImGui::Separator();
-
-        // The combo box for audio playback
-        static int audioPlaybackIndex = 0;
-        showDeviceComboBox(eDEVICE_TYPE::kAudioPlayback, audioPlaybackIndex, g_AudioPlaybackDeviceList);
-
-        // The audio playback volume slider
-        float playbackVolume = agoraObj.GetAudioPlaybackVolume();
-        if (ImGui::SliderFloat("Playback Volume", &playbackVolume, 0.0f, 1.0f))
-        {
-          agoraObj.SetAudioPlaybackVolume(playbackVolume);
-        }
-        ImGui::Separator();
-
-        // audio effect
-        if (ImGui::BeginCombo("Voice effect", g_VoiceEffects.at(g_VoiceEffect).c_str()))
-        {
-          for (int i = 0; i < g_VoiceEffects.size(); i++)
-          {
-            const bool isFocus = (g_VoiceEffect == i);
-            if (ImGui::Selectable(g_VoiceEffects.at(i).c_str(), isFocus))
-            {
-              g_VoiceEffect = i;
-              eAUDIO_EFFECT effect = eAUDIO_EFFECT::AUDIO_EFFECT_OFF;
-              switch (g_VoiceEffect)
-              {
-              case 1:
-                effect = eAUDIO_EFFECT::VOICE_CHANGER_EFFECT_UNCLE;
-                break;
-              case 2:
-                effect = eAUDIO_EFFECT::VOICE_CHANGER_EFFECT_OLDMAN;
-                break;
-              case 3:
-                effect = eAUDIO_EFFECT::VOICE_CHANGER_EFFECT_BOY;
-                break;
-              case 4:
-                effect = eAUDIO_EFFECT::VOICE_CHANGER_EFFECT_SISTER;
-                break;
-              case 5:
-                effect = eAUDIO_EFFECT::VOICE_CHANGER_EFFECT_GIRL;
-                break;
-              case 6:
-                effect = eAUDIO_EFFECT::VOICE_CHANGER_EFFECT_PIGKING;
-                break;
-              case 7:
-                effect = eAUDIO_EFFECT::VOICE_CHANGER_EFFECT_HULK;
-                break;
-              default:
-                effect = eAUDIO_EFFECT::AUDIO_EFFECT_OFF;
-                break;
-              }
-              agoraObj.SetAudioEffect(effect);
-            }
-            if (isFocus)
-            {
-              ImGui::SetItemDefaultFocus();
-            }
-          }
-          ImGui::EndCombo();
-        }
-
-        // enable local audio stream
-        std::string state = (g_LocalAudioStreamMute ? std::string("Unmute") : std::string("Mute"));
-        if (ImGui::Checkbox((state + std::string(" local audio stream")).c_str(), &g_LocalAudioStreamMute))
-        {
-          agoraObj.MuteLocalAudioStream(g_LocalAudioStreamMute);
-        }
-
-        // enable audio device test
-        if (g_ConnectedChannels <= 0)
-        {
-          state = (g_EnableAudioTest ? std::string("Disable") : std::string("Enable"));
-          if (ImGui::Checkbox((state + std::string(" device test")).c_str(), &g_EnableAudioTest))
-          {
-            agoraObj.EnableAudioRecordingTest(g_EnableAudioTest);
-          }
-        }
+        audioConfig();
         ImGui::EndTabItem();
       }
       ImGui::EndTabBar();
@@ -1097,7 +1091,7 @@ void gridWindow()
   static sf::Color audioMute(0xff0000ff);
 
   // show Main Menu
-  if (ImGui::Begin("grid", &g_MainMenu, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | 
+  if (ImGui::Begin("grid", &g_GridFlag, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | 
                                         ImGuiWindowFlags_NoMove | 
                                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoBringToFrontOnFocus))
   {
@@ -1106,36 +1100,38 @@ void gridWindow()
     {
       // Main frame
       auto& uid = g_ChannelTabs[0].clientID;
-      sf::Vector2u size = g_LocalFrame.texture.getSize();
+      sf::Vector2u size = g_LocalUser.frame.texture.getSize();
       std::string desc;
       desc = std::string("ID: ");
       desc += std::to_string(g_ChannelTabs[0].clientID);
       desc += std::string("(");
-      desc += std::to_string(size.x);
+      desc += std::to_string(g_LocalUser.width);
       desc += std::string("x");
-      desc += std::to_string(size.y);
-      desc += std::string(")");
-      ImGui::Image(g_LocalFrame.texture, g_LocalFrameMaxSize,
-                   (g_LocalVideoStreamMute ? videoMute : videoUnmute),
-                   (g_LocalAudioStreamMute ? audioMute : (g_ChannelTabs[0].activeSpeaker == uid ? talk : audioUnmute)));
+      desc += std::to_string(g_LocalUser.height);
+      desc += std::string(") ");
+      desc += std::to_string(g_LocalUser.bitrate);
+      desc += std::string("kb");
+      ImGui::Image(g_LocalUser.frame.texture, g_LocalFrameMaxSize,
+                   (g_LocalUser.videoStreamMute ? videoMute : videoUnmute),
+                   (g_LocalUser.audioStreamMute ? audioMute : (g_ChannelTabs[0].activeSpeaker == uid ? talk : audioUnmute)));
       ImGui::Text(desc.c_str());
 
       // Main frame settings
-      if (ImGui::Checkbox(g_LocalAudioStreamMute ? "Unmute Audio" : "Mute Audio", &g_LocalAudioStreamMute))
+      if (ImGui::Checkbox(g_LocalUser.audioStreamMute ? "Unmute Audio" : "Mute Audio", &g_LocalUser.audioStreamMute))
       {
-        agoraObj.MuteLocalAudioStream(g_LocalAudioStreamMute);
+        agoraObj.MuteLocalAudioStream(g_LocalUser.audioStreamMute);
       }
       ImGui::SameLine();
-      if (ImGui::Checkbox(g_LocalVideoStreamMute ? "Unmute Video" : "Mute Video", &g_LocalVideoStreamMute))
+      if (ImGui::Checkbox(g_LocalUser.videoStreamMute ? "Unmute Video" : "Mute Video", &g_LocalUser.videoStreamMute))
       {
-        agoraObj.MuteLocalVideoStream(g_LocalVideoStreamMute);
+        agoraObj.MuteLocalVideoStream(g_LocalUser.videoStreamMute);
       }
 
       // Grid
       if (ImGui::BeginTable("Remote Frame", 4, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_SizingFixedSame))
       {
         int row = 0, column = 0;
-        for (auto& remoteFrame : g_RemoteFrame)
+        for (auto& remoteUser : g_RemoteUser)
         {
           if (column == 0)
           {
@@ -1144,47 +1140,47 @@ void gridWindow()
           ImGui::TableSetColumnIndex(column);
 
           // remote frame
-          auto& ruid = remoteFrame.first;
+          auto& ruid = remoteUser.first;
           desc = std::string("ID: ");
-          desc += std::to_string(remoteFrame.first);
+          desc += std::to_string(remoteUser.first);
           desc += std::string("(");
-          desc += std::to_string(remoteFrame.second.width);
+          desc += std::to_string(remoteUser.second.width);
           desc += std::string("x");
-          desc += std::to_string(remoteFrame.second.height);
+          desc += std::to_string(remoteUser.second.height);
           desc += std::string(") ");
-          desc += std::to_string(remoteFrame.second.bitrate);
+          desc += std::to_string(remoteUser.second.bitrate);
           desc += std::string("kb");
-          ImGui::Image(remoteFrame.second.frame.texture, g_FrameMaxSize,
-                       (remoteFrame.second.videoStreamMute ? videoMute : videoUnmute),
-                       (remoteFrame.second.audioStreamMute ? audioMute : (g_ChannelTabs[0].activeSpeaker == ruid ? talk : audioUnmute)));
+          ImGui::Image(remoteUser.second.frame.texture, g_FrameMaxSize,
+                       (remoteUser.second.videoStreamMute ? videoMute : videoUnmute),
+                       (remoteUser.second.audioStreamMute ? audioMute : (g_ChannelTabs[0].activeSpeaker == ruid ? talk : audioUnmute)));
           ImGui::Text(desc.c_str());
 
           // Main frame settings
-          ImGui::PushID(remoteFrame.first);
-          if (ImGui::Checkbox(remoteFrame.second.audioStreamMute ? "Unmute Audio" : "Mute Audio", &remoteFrame.second.audioStreamMute))
+          ImGui::PushID(remoteUser.first);
+          if (ImGui::Checkbox(remoteUser.second.audioStreamMute ? "Unmute Audio" : "Mute Audio", &remoteUser.second.audioStreamMute))
           {
-            agoraObj.MuteRemoteAudioStream(remoteFrame.first, remoteFrame.second.audioStreamMute);
+            agoraObj.MuteRemoteAudioStream(remoteUser.first, remoteUser.second.audioStreamMute);
           }
           ImGui::SameLine();
-          if (ImGui::Checkbox(remoteFrame.second.videoStreamMute ? "Unmute Video" : "Mute Video", &remoteFrame.second.videoStreamMute))
+          if (ImGui::Checkbox(remoteUser.second.videoStreamMute ? "Unmute Video" : "Mute Video", &remoteUser.second.videoStreamMute))
           {
-            agoraObj.MuteRemoteVideoStream(remoteFrame.first, remoteFrame.second.videoStreamMute);
+            agoraObj.MuteRemoteVideoStream(remoteUser.first, remoteUser.second.videoStreamMute);
           }
-          if (ImGui::Button(remoteFrame.second.videoStreamQuality ? "Low Video Quality" : "High Video Quality"))
+          if (ImGui::Button(remoteUser.second.videoStreamQuality ? "Low Video Quality" : "High Video Quality"))
           {
-            remoteFrame.second.videoStreamQuality = !remoteFrame.second.videoStreamQuality;
-            agoraObj.SetRemoteVideoQuality(remoteFrame.first, remoteFrame.second.videoStreamQuality ? eREMOTE_VIDEO_QUALITY::kHIGH : eREMOTE_VIDEO_QUALITY::kLOW);
+            remoteUser.second.videoStreamQuality = !remoteUser.second.videoStreamQuality;
+            agoraObj.SetRemoteVideoQuality(remoteUser.first, remoteUser.second.videoStreamQuality ? eREMOTE_VIDEO_QUALITY::kHIGH : eREMOTE_VIDEO_QUALITY::kLOW);
           }
           ImGui::SameLine();
-          if (ImGui::Button(remoteFrame.second.videoStreamPriority ? "Low Video Priority" : "High Video Priority"))
+          if (ImGui::Button(remoteUser.second.videoStreamPriority ? "Low Video Priority" : "High Video Priority"))
           {
-            remoteFrame.second.videoStreamPriority = !remoteFrame.second.videoStreamPriority;
-            agoraObj.SetRemoteVideoPriority(remoteFrame.first, remoteFrame.second.videoStreamPriority ? eREMOTE_VIDEO_PRIORITY::kHIGH : eREMOTE_VIDEO_PRIORITY::kNORMAL);
+            remoteUser.second.videoStreamPriority = !remoteUser.second.videoStreamPriority;
+            agoraObj.SetRemoteVideoPriority(remoteUser.first, remoteUser.second.videoStreamPriority ? eREMOTE_VIDEO_PRIORITY::kHIGH : eREMOTE_VIDEO_PRIORITY::kNORMAL);
           }
-          if (ImGui::Button(remoteFrame.second.videoSuperResolution ? "Turn OFF Super Resolution" : "Turn ON Super Resolution"))
+          if (ImGui::Button(remoteUser.second.videoSuperResolution ? "Turn OFF Super Resolution" : "Turn ON Super Resolution"))
           {
-            remoteFrame.second.videoSuperResolution = !remoteFrame.second.videoSuperResolution;
-            agoraObj.EnableRemoteVideoSuperResolution(remoteFrame.first, remoteFrame.second.videoSuperResolution);
+            remoteUser.second.videoSuperResolution = !remoteUser.second.videoSuperResolution;
+            agoraObj.EnableRemoteVideoSuperResolution(remoteUser.first, remoteUser.second.videoSuperResolution);
           }
           ImGui::PopID();
 
@@ -1205,7 +1201,7 @@ void menuWindow()
   ImGui::SetNextWindowSize(ImVec2((float)g_MainWindow.getSize().x, 20.0f), ImGuiCond_Always);
  
   // show Main Menu
-  if (ImGui::Begin("mainMenu", &g_MainMenu, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar | 
+  if (ImGui::Begin("mainMenu", &g_GridFlag, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar | 
                                             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | 
                                             ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings | 
                                             ImGuiWindowFlags_NoBringToFrontOnFocus))
@@ -1216,13 +1212,13 @@ void menuWindow()
       if (ImGui::BeginMenu("Device Setting"))
       {
         g_SettingsFlag = true;
-        g_ChannelSettingsFlag = !g_SettingsFlag;
+        g_ChannelFlag = !g_SettingsFlag;
         ImGui::EndMenu();
       }
       if (ImGui::BeginMenu("Channel Settings"))
       {
-        g_ChannelSettingsFlag = true;
-        g_SettingsFlag = !g_ChannelSettingsFlag;
+        g_ChannelFlag = true;
+        g_SettingsFlag = !g_ChannelFlag;
         ImGui::EndMenu();
       }
       ImGui::EndMenuBar();
@@ -1239,7 +1235,7 @@ void setUISettings()
   {
     settingsWindow();
   }
-  if (g_ChannelSettingsFlag)
+  if (g_ChannelFlag)
   {
     channelSettingWindow();
   }
@@ -1249,7 +1245,7 @@ void setUISettings()
 void updateLocalFrame(const VideoBuffer& _bufferInfo)
 {
   // check if its necessary reset the texture
-  sf::Vector2u textureSize = g_LocalFrame.texture.getSize();
+  sf::Vector2u textureSize = g_LocalUser.frame.texture.getSize();
   sf::Vector2u bufferSize(static_cast<unsigned int>(_bufferInfo.width), static_cast<unsigned int>(_bufferInfo.height));
   int bufferLenght = int(bufferSize.x) * int(bufferSize.y) * 4;
   bool resetTexture = (textureSize.x != bufferSize.x || textureSize.y != bufferSize.y);
@@ -1257,30 +1253,30 @@ void updateLocalFrame(const VideoBuffer& _bufferInfo)
   // reset the local frame texture
   if (resetTexture)
   {
-    if (g_LocalFrame.buffer != nullptr)
+    if (g_LocalUser.frame.buffer != nullptr)
     {
-      delete[] g_LocalFrame.buffer;
-      g_LocalFrame.buffer = nullptr;
+      delete[] g_LocalUser.frame.buffer;
+      g_LocalUser.frame.buffer = nullptr;
     }
 
-    g_LocalFrame.texture.create(bufferSize.x, bufferSize.y);
-    g_LocalFrame.buffer = new sf::Uint8[bufferLenght];
+    g_LocalUser.frame.texture.create(bufferSize.x, bufferSize.y);
+    g_LocalUser.frame.buffer = new sf::Uint8[bufferLenght];
     return;
   }
 
   // feed the local frame texture
-  memcpy(g_LocalFrame.buffer, _bufferInfo.yBuffer, bufferLenght);
-  g_LocalFrame.texture.update(g_LocalFrame.buffer);
+  memcpy(g_LocalUser.frame.buffer, _bufferInfo.yBuffer, bufferLenght);
+  g_LocalUser.frame.texture.update(g_LocalUser.frame.buffer);
 }
 
 void updateRemoteFrame(const VideoBuffer& _bufferInfo, const unsigned int _clientID)
 {
   // add the frame buffer for the remote user
-  if (g_RemoteFrame.find(_clientID) == g_RemoteFrame.end())
+  if (g_RemoteUser.find(_clientID) == g_RemoteUser.end())
   {
-    g_RemoteFrame.emplace(_clientID, remoteUser());
+    g_RemoteUser.emplace(_clientID, userInfo());
   }
-  auto& remoteFrame = g_RemoteFrame.at(_clientID);
+  auto& remoteFrame = g_RemoteUser.at(_clientID);
 
   // check if its necessary reset the texture
   sf::Vector2u textureSize = remoteFrame.frame.texture.getSize();
@@ -1347,7 +1343,8 @@ void startUp()
   agoraObj.m_EventHandler.SetOnRtmpStreamingEvent(onRtmpStreamingEvent);
   agoraObj.m_EventHandler.SetOnUserOffline(onUserOffline);
   agoraObj.m_EventHandler.SetOnRemoteVideoStats(onRemoteVideoStats);
-
+  agoraObj.m_EventHandler.SetOnLocalVideoStats(onLocalVideoStats);
+  
   g_VideoRecordingDeviceList = agoraObj.GetDeviceList(eDEVICE_TYPE::kVideoRecording);
   g_AudioRecordingDeviceList = agoraObj.GetDeviceList(eDEVICE_TYPE::kAudioRecording);
   g_AudioPlaybackDeviceList = agoraObj.GetDeviceList(eDEVICE_TYPE::kAudioPlayback);
