@@ -1357,20 +1357,6 @@ int AgoraRTC::JoinChannel(const ChannelParams& _channelParams)
     return result;
   }
 
-  // set the channel profile (CHANNEL_PROFILE_LIVE_BROADCASTING by default to allow screen share in a normal call)
-  result = m_RtcEngine->setChannelProfile(CHANNEL_PROFILE_LIVE_BROADCASTING);
-  if (result < 0)
-  {
-    return result;
-  }
-
-  // set the channel client role
-  result = m_RtcEngine->setClientRole(static_cast<CLIENT_ROLE_TYPE>(_channelParams.clientRole));
-  if (result < 0)
-  {
-    return result;
-  }
-
   // turn on/off the volume indicator
   result = m_RtcEngine->enableAudioVolumeIndication(cTestInterval, cSmothInterval, false);
   if (result < 0)
@@ -1392,8 +1378,23 @@ int AgoraRTC::JoinChannel(const ChannelParams& _channelParams)
     return result;
   }
 
+  // set the channel profile (CHANNEL_PROFILE_LIVE_BROADCASTING by default to allow screen share in a normal call)
+  result = m_RtcEngine->setChannelProfile(CHANNEL_PROFILE_LIVE_BROADCASTING);
+  if (result < 0)
+  {
+    return result;
+  }
+
+  // set the channel client role
+  result = m_RtcEngine->setClientRole(static_cast<CLIENT_ROLE_TYPE>(_channelParams.clientRole));
+  if (result < 0)
+  {
+    return result;
+  }
+
   // join to the assigned channel
-  result = m_RtcEngine->joinChannel(nullptr, _channelParams.channelName.c_str(), nullptr, _channelParams.clientID);
+  std::string info("{\"owner\":true,\"width\":640,\"height\":480,\"bitrate\":500}");
+  result = m_RtcEngine->joinChannel(nullptr, _channelParams.channelName.c_str(), info.c_str(), _channelParams.clientID);
   if (result < 0)
   {
     return result;
