@@ -527,7 +527,7 @@ void showChannelTab(bool& _isOpen, channelSettings& _channel)
             StreamConfig config;
             config.audioBitrate = _channel.rtmpAudioBitrate;
             config.audioChannels = _channel.rtmpAudioChannels + 1;
-            config.audioSampleRate = static_cast<AUDIO_SAMPLE_RATE_TYPE>(g_AudioSampleRate.at(_channel.rtmpAudioSampleRate));
+            config.audioSampleRate = g_AudioSampleRate.at(_channel.rtmpAudioSampleRate);
             config.height = _channel.rtmpHeight;
             config.videoBitrate = _channel.rtmpVideoBitrate;
             config.videoFramerate = _channel.rtmpVideoFramerate;
@@ -844,7 +844,7 @@ void videoConfig()
   else
   {
     static int videoRecordingIndex = 0;
-    static int videoSize[2] = { encoder.dimensions.width, encoder.dimensions.height };
+    static int videoSize[2] = { encoder.width, encoder.height };
     static int frIndex = 3;
     static int degIndex = 0;
     static int mirrIndex = 0;
@@ -856,8 +856,8 @@ void videoConfig()
     {
       videoSize[0] = (videoSize[0] < 0 ? 0 : videoSize[0]);
       videoSize[1] = (videoSize[1] < 0 ? 0 : videoSize[1]);
-      encoder.dimensions.width = videoSize[0];
-      encoder.dimensions.height = videoSize[1];
+      encoder.width = videoSize[0];
+      encoder.height = videoSize[1];
     }
     if (ImGui::BeginCombo("FPS", std::to_string(g_FrameRate.at(frIndex)).c_str()))
     {
@@ -929,7 +929,7 @@ void videoConfig()
           capIndex = i;
 
           CameraCapturerConfig config;
-          config.preference = static_cast<CAPTURER_OUTPUT_PREFERENCE>(capIndex);
+          config.preference = capIndex;
           agoraObj.SetCameraCapturerConfiguration(config);
         }
         if (isFocus)
@@ -942,9 +942,9 @@ void videoConfig()
     ImGui::Separator();
     if (ImGui::Button("Apply Encoding Settings"))
     {
-      encoder.degradationPreference = static_cast<DEGRADATION_PREFERENCE>(degIndex);
-      encoder.frameRate = static_cast<FRAME_RATE>(g_FrameRate.at(frIndex));
-      encoder.mirrorMode = static_cast<VIDEO_MIRROR_MODE_TYPE>(mirrIndex);
+      encoder.degradationPreference = degIndex;
+      encoder.frameRate = g_FrameRate.at(frIndex);
+      encoder.mirrorMode = mirrIndex;
       agoraObj.SetVideoEncoderConfiguration(encoder);
     }
   }

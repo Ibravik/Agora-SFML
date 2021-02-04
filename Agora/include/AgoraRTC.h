@@ -6,13 +6,10 @@
 #include <string>
 #include <functional>
 #include <map>
+#include <vector>
 #include <IAgoraRtcEngine.h>
 #include <IAgoraMediaEngine.h>
 #include <IAgoraRtcChannel.h>
-
-using namespace agora;
-using namespace agora::rtc;
-using namespace agora::media;
 
 /**
  * @brief   The follow struct only show an interface for the event message info that the SDK 
@@ -22,13 +19,13 @@ using namespace agora::media;
 namespace agoraYCE
 {
   struct WarnInfo
-    {
-      int warn;
-      std::string msg;
+  {
+    int warn;
+    std::string msg;
 
-      WarnInfo() : 
-        warn(0){}
-    };
+    WarnInfo() :
+      warn(0) {}
+  };
 
   struct ErrorInfo
   {
@@ -50,7 +47,7 @@ namespace agoraYCE
       elapsed(0) {}
   };
 
-  struct CallStatsInfo : public RtcStats 
+  struct CallStatsInfo : public agora::rtc::RtcStats 
   { 
   };
 
@@ -140,11 +137,11 @@ namespace agoraYCE
       reason(0){}
   };
 
-  struct RemoteVideoStatsInfo : public RemoteVideoStats
+  struct RemoteVideoStatsInfo : public agora::rtc::RemoteVideoStats
   {
   };
 
-  struct LocalVideoStatsInfo : public LocalVideoStats
+  struct LocalVideoStatsInfo : public agora::rtc::LocalVideoStats
   {
   };
 
@@ -155,7 +152,7 @@ namespace agoraYCE
    *          not all the available events are exposed here, fell free to add another one in 
    *          necessary cases. 
    */
-  class EventHandler : public IRtcEngineEventHandler
+  class EventHandler : public agora::rtc::IRtcEngineEventHandler
   {
     /**
      * Class variables---------------------------------------------------------------------------
@@ -205,20 +202,20 @@ namespace agoraYCE
   private:
     void onWarning(int warn, const char* msg) override;
     void onError(int err, const char* msg) override;
-    void onJoinChannelSuccess(const char* channel, uid_t uid, int elapsed) override;
-    void onLeaveChannel(const RtcStats& stats) override;
-    void onClientRoleChanged(CLIENT_ROLE_TYPE oldRole, CLIENT_ROLE_TYPE newRole) override;
+    void onJoinChannelSuccess(const char* channel, agora::rtc::uid_t uid, int elapsed) override;
+    void onLeaveChannel(const agora::rtc::RtcStats& stats) override;
+    void onClientRoleChanged(agora::rtc::CLIENT_ROLE_TYPE oldRole, agora::rtc::CLIENT_ROLE_TYPE newRole) override;
     void onConnectionLost() override;
-    void onRtcStats(const RtcStats& stats) override;
-    void onStreamMessageError(uid_t uid, int streamId, int code, int missed, int cached) override;
-    void onStreamInjectedStatus(const char* url, uid_t uid, int status) override;
-    void onUserJoined(uid_t uid, int elapsed) override;
-    void onActiveSpeaker(uid_t uid) override;
-    void onRtmpStreamingStateChanged(const char* url, RTMP_STREAM_PUBLISH_STATE state, RTMP_STREAM_PUBLISH_ERROR errCode) override;
-    void onRtmpStreamingEvent(const char* url, RTMP_STREAMING_EVENT eventCode) override;
-    void onUserOffline(uid_t uid, USER_OFFLINE_REASON_TYPE reason) override;
-    void onRemoteVideoStats(const RemoteVideoStats& stats) override;
-    void onLocalVideoStats(const LocalVideoStats& stats) override;
+    void onRtcStats(const agora::rtc::RtcStats& stats) override;
+    void onStreamMessageError(agora::rtc::uid_t uid, int streamId, int code, int missed, int cached) override;
+    void onStreamInjectedStatus(const char* url, agora::rtc::uid_t uid, int status) override;
+    void onUserJoined(agora::rtc::uid_t uid, int elapsed) override;
+    void onActiveSpeaker(agora::rtc::uid_t uid) override;
+    void onRtmpStreamingStateChanged(const char* url, agora::rtc::RTMP_STREAM_PUBLISH_STATE state, agora::rtc::RTMP_STREAM_PUBLISH_ERROR errCode) override;
+    void onRtmpStreamingEvent(const char* url, agora::rtc::RTMP_STREAMING_EVENT eventCode) override;
+    void onUserOffline(agora::rtc::uid_t uid, agora::rtc::USER_OFFLINE_REASON_TYPE reason) override;
+    void onRemoteVideoStats(const agora::rtc::RemoteVideoStats& stats) override;
+    void onLocalVideoStats(const agora::rtc::LocalVideoStats& stats) override;
   };
 
   /**
@@ -247,7 +244,7 @@ namespace agoraYCE
    *          not all the available events are exposed here, fell free to add another one in
    *          necessary cases.
    */
-  class VideoFrameObserver : public IVideoFrameObserver
+  class VideoFrameObserver : public agora::media::IVideoFrameObserver
   {
     /**
      * Class variables---------------------------------------------------------------------------
@@ -356,7 +353,7 @@ namespace agoraYCE
   /**
    * @brief   The video encoder config for the used in channel connection.
    */
-  struct VideoEncoderConfig : public VideoEncoderConfiguration 
+  struct VideoEncoderConfig
   {
     /**
      * @brief   The following table lists the recommended video encoder configurations, where the 
@@ -400,15 +397,54 @@ namespace agoraYCE
     | 2560 * 1440 | 60               | 6500                |
     | 3840 * 2160 | 30               | 6500                |
     | 3840 * 2160 | 60               | 6500                |
-      */
+    */
+    int width;
+    int height;
+    int frameRate;
+    int minFrameRate;
+    int bitrate;
+    int minBitrate;
+    int orientationMode;
+    int degradationPreference;
+    int mirrorMode;
+
+    VideoEncoderConfig()
+      : width(640)
+      , height(480)
+      , frameRate(15)
+      , minFrameRate(-1)
+      , bitrate(0)
+      , minBitrate(-1)
+      , orientationMode(0)
+      , degradationPreference(0)
+      , mirrorMode(0)
+    {}
   };
 
   /**
    * @brief   The stream config to inject it in the channel.
    */
-  struct StreamConfig : InjectStreamConfig
+  struct StreamConfig
   {
-  
+    int width;
+    int height;
+    int videoGop;
+    int videoFramerate;
+    int videoBitrate;
+    int audioSampleRate;
+    int audioBitrate;
+    int audioChannels;
+
+    StreamConfig()
+      : width(0)
+      , height(0)
+      , videoGop(30)
+      , videoFramerate(15)
+      , videoBitrate(400)
+      , audioSampleRate(48000)
+      , audioBitrate(48)
+      , audioChannels(1)
+    {}
   };
 
   /**
@@ -426,15 +462,15 @@ namespace agoraYCE
   /** 
    * @brief   Camera capture configuration.
    */
-  struct CameraCapturerConfig : public CameraCapturerConfiguration
+  struct CameraCapturerConfig
   {
-  
+    int preference;
   };
 
   /**
    * @brief   Screen capture configuration.
    */
-  struct ScreenCaptureConfig : public ScreenCaptureParameters
+  struct ScreenCaptureConfig : public agora::rtc::ScreenCaptureParameters
   {
   
   };
@@ -492,7 +528,7 @@ namespace agoraYCE
     /**
      * @brief   Pointer to the IRtcEngine agora obj.
      */
-    IRtcEngine* m_RtcEngine = nullptr;
+    agora::rtc::IRtcEngine* m_RtcEngine = nullptr;
 
     /**
      * @brief   Pointer to the MediaEngine agora obj.
@@ -512,17 +548,17 @@ namespace agoraYCE
     /**
      * @brief   Pointer to the Video device collection.
      */
-    IVideoDeviceCollection* m_VideoRecordingCollection = nullptr;
+    agora::rtc::IVideoDeviceCollection* m_VideoRecordingCollection = nullptr;
 
     /**
      * @brief   Pointer to the Audio device recording collection.
      */
-    IAudioDeviceCollection* m_AudioRecordingCollection = nullptr;
+    agora::rtc::IAudioDeviceCollection* m_AudioRecordingCollection = nullptr;
 
     /**
      * @brief   Pointer to the Audio device playback collection.
      */
-    IAudioDeviceCollection* m_AudioPlaybackCollection = nullptr;
+    agora::rtc::IAudioDeviceCollection* m_AudioPlaybackCollection = nullptr;
 
     /**
      * @brief   The current screen device assigned for desktop share.
@@ -719,7 +755,7 @@ namespace agoraYCE
      * @bug     No know Bugs.
      * @return  #int: Agora status code.
      */
-    int SetCameraCapturerConfiguration(const CameraCapturerConfig& _effect) const;
+    int SetCameraCapturerConfiguration(const CameraCapturerConfig& _config) const;
 
     /**
      * @brief   Enable the super resolution video algorithm to specific user

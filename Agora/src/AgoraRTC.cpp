@@ -115,7 +115,7 @@ namespace agoraYCE
     }
   }
 
-  void EventHandler::onJoinChannelSuccess(const char* channel, uid_t uid, int elapsed)
+  void EventHandler::onJoinChannelSuccess(const char* channel, agora::rtc::uid_t uid, int elapsed)
   {
     if (m_onJoinChannelSuccess != nullptr)
     {
@@ -132,7 +132,7 @@ namespace agoraYCE
     }
   }
 
-  void EventHandler::onLeaveChannel(const RtcStats& stats)
+  void EventHandler::onLeaveChannel(const agora::rtc::RtcStats& stats)
   {
     if (m_onLeaveChannel != nullptr)
     {
@@ -165,7 +165,7 @@ namespace agoraYCE
     }
   }
 
-  void EventHandler::onClientRoleChanged(CLIENT_ROLE_TYPE oldRole, CLIENT_ROLE_TYPE newRole)
+  void EventHandler::onClientRoleChanged(agora::rtc::CLIENT_ROLE_TYPE oldRole, agora::rtc::CLIENT_ROLE_TYPE newRole)
   {
     if (m_onClientRoleChanged != nullptr)
     {
@@ -185,7 +185,7 @@ namespace agoraYCE
     }
   }
 
-  void EventHandler::onRtcStats(const RtcStats& stats)
+  void EventHandler::onRtcStats(const agora::rtc::RtcStats& stats)
   {
     if (m_onRtcStats != nullptr)
     {
@@ -218,7 +218,7 @@ namespace agoraYCE
     }
   }
 
-  void EventHandler::onStreamMessageError(uid_t uid, int streamId, int code, int missed, int cached)
+  void EventHandler::onStreamMessageError(agora::rtc::uid_t uid, int streamId, int code, int missed, int cached)
   {
     if (m_onStreamMessageError != nullptr)
     {
@@ -233,7 +233,7 @@ namespace agoraYCE
     }
   }
 
-  void EventHandler::onStreamInjectedStatus(const char* url, uid_t uid, int status)
+  void EventHandler::onStreamInjectedStatus(const char* url, agora::rtc::uid_t uid, int status)
   {
     if (m_onStreamInjectedStatus != nullptr)
     {
@@ -249,7 +249,7 @@ namespace agoraYCE
     }
   }
 
-  void EventHandler::onUserJoined(uid_t uid, int elapsed)
+  void EventHandler::onUserJoined(agora::rtc::uid_t uid, int elapsed)
   {
     if (m_onUserJoined != nullptr)
     {
@@ -261,7 +261,7 @@ namespace agoraYCE
     }
   }
 
-  void EventHandler::onActiveSpeaker(uid_t uid)
+  void EventHandler::onActiveSpeaker(agora::rtc::uid_t uid)
   {
     if (m_onActiveSpeaker != nullptr)
     {
@@ -269,7 +269,7 @@ namespace agoraYCE
     }
   }
 
-  void EventHandler::onRtmpStreamingStateChanged(const char* url, RTMP_STREAM_PUBLISH_STATE state, RTMP_STREAM_PUBLISH_ERROR errCode)
+  void EventHandler::onRtmpStreamingStateChanged(const char* url, agora::rtc::RTMP_STREAM_PUBLISH_STATE state, agora::rtc::RTMP_STREAM_PUBLISH_ERROR errCode)
   {
     if (m_onRtmpStreamingStateChanged != nullptr)
     {
@@ -285,7 +285,7 @@ namespace agoraYCE
     }
   }
 
-  void EventHandler::onRtmpStreamingEvent(const char* url, RTMP_STREAMING_EVENT eventCode)
+  void EventHandler::onRtmpStreamingEvent(const char* url, agora::rtc::RTMP_STREAMING_EVENT eventCode)
   {
     if (m_onRtmpStreamingEvent != nullptr)
     {
@@ -300,7 +300,7 @@ namespace agoraYCE
     }
   }
 
-  void EventHandler::onUserOffline(uid_t uid, USER_OFFLINE_REASON_TYPE reason)
+  void EventHandler::onUserOffline(agora::rtc::uid_t uid, agora::rtc::USER_OFFLINE_REASON_TYPE reason)
   {
     if (m_onUserOffline != nullptr)
     {
@@ -312,7 +312,7 @@ namespace agoraYCE
     }
   }
 
-  void EventHandler::onRemoteVideoStats(const RemoteVideoStats& stats)
+  void EventHandler::onRemoteVideoStats(const agora::rtc::RemoteVideoStats& stats)
   {
     if (m_onRemoteVideoStats != nullptr)
     {
@@ -334,7 +334,7 @@ namespace agoraYCE
     }
   }
 
-  void EventHandler::onLocalVideoStats(const LocalVideoStats& stats)
+  void EventHandler::onLocalVideoStats(const agora::rtc::LocalVideoStats& stats)
   {
     if (m_onLocalVideoStats != nullptr)
     {
@@ -525,7 +525,7 @@ namespace agoraYCE
     int result = 0;
 
     // create the agora engine context
-    RtcEngineContext ctx;
+    agora::rtc::RtcEngineContext ctx;
     ctx.appId = _appID.c_str();
     ctx.eventHandler = &m_EventHandler;
     result = m_RtcEngine->initialize(ctx);
@@ -539,7 +539,7 @@ namespace agoraYCE
     m_RtcEngine->enableAudio();
 
     // create the media engine
-    if (!m_MediaEngine.queryInterface(m_RtcEngine, AGORA_IID_MEDIA_ENGINE))
+    if (!m_MediaEngine.queryInterface(m_RtcEngine, agora::AGORA_IID_MEDIA_ENGINE))
     {
       return -1;
     }
@@ -552,13 +552,13 @@ namespace agoraYCE
     }
 
     // create the video device manager
-    if (!m_VideoDeviceManager.queryInterface(m_RtcEngine, AGORA_IID_VIDEO_DEVICE_MANAGER))
+    if (!m_VideoDeviceManager.queryInterface(m_RtcEngine, agora::AGORA_IID_VIDEO_DEVICE_MANAGER))
     {
       return -1;
     }
 
     // create the audio device engine
-    if (!m_AudioDeviceManager.queryInterface(m_RtcEngine, AGORA_IID_AUDIO_DEVICE_MANAGER))
+    if (!m_AudioDeviceManager.queryInterface(m_RtcEngine, agora::AGORA_IID_AUDIO_DEVICE_MANAGER))
     {
       return -1;
     }
@@ -634,9 +634,9 @@ namespace agoraYCE
   #if defined(_WIN32)
       while (lenght >= 0)
       {
-        DISPLAY_DEVICE device;
+        DISPLAY_DEVICEA device;
         device.cb = sizeof(device);
-        if (EnumDisplayDevices(NULL, lenght++, &device, 0))
+        if (EnumDisplayDevicesA(nullptr, lenght++, &device, 0))
         {
           if (!(device.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP))
           {
@@ -659,7 +659,7 @@ namespace agoraYCE
       for (size_t i = 0; i < windList.size(); i++)
       {
         char winName[255]{};
-        ::GetWindowText(windList.at(i), winName, 255);
+        ::GetWindowTextA(windList.at(i), winName, 255);
         output.push_back(std::string(winName));
       }
   #endif
@@ -668,8 +668,8 @@ namespace agoraYCE
     // Push the device list
     for (int i = 0; i < lenght; ++i)
     {
-      char name[MAX_DEVICE_ID_LENGTH]{};
-      char id[MAX_DEVICE_ID_LENGTH]{};
+      char name[agora::rtc::MAX_DEVICE_ID_LENGTH]{};
+      char id[agora::rtc::MAX_DEVICE_ID_LENGTH]{};
       result = -1;
 
       if (_deviceType == eDEVICE_TYPE::kVideoRecording)
@@ -751,7 +751,7 @@ namespace agoraYCE
       for (size_t i = 0; i < windList.size(); i++)
       {
         char winName[255]{};
-        ::GetWindowText(windList.at(i), winName, 255);
+        ::GetWindowTextA(windList.at(i), winName, 255);
         if (_deviceName == std::string(winName))
         {
           return _deviceName;
@@ -763,8 +763,8 @@ namespace agoraYCE
     // find the device in the list
     for (int i = 0; i < lenght; ++i)
     {
-      char name[MAX_DEVICE_ID_LENGTH]{};
-      char id[MAX_DEVICE_ID_LENGTH]{};
+      char name[agora::rtc::MAX_DEVICE_ID_LENGTH]{};
+      char id[agora::rtc::MAX_DEVICE_ID_LENGTH]{};
       result = -1;
 
       if (_deviceType == eDEVICE_TYPE::kVideoRecording)
@@ -847,7 +847,7 @@ namespace agoraYCE
       for (size_t i = 0; i < windList.size(); i++)
       {
         char winName[255]{};
-        ::GetWindowText(windList.at(i), winName, 255);
+        ::GetWindowTextA(windList.at(i), winName, 255);
         if (_deviceID == std::string(winName))
         {
           return _deviceID;
@@ -859,8 +859,8 @@ namespace agoraYCE
     // find the device in the list
     for (int i = 0; i < lenght; ++i)
     {
-      char name[MAX_DEVICE_ID_LENGTH]{};
-      char id[MAX_DEVICE_ID_LENGTH]{};
+      char name[agora::rtc::MAX_DEVICE_ID_LENGTH]{};
+      char id[agora::rtc::MAX_DEVICE_ID_LENGTH]{};
       result = -1;
 
       if (_deviceType == eDEVICE_TYPE::kVideoRecording)
@@ -909,7 +909,7 @@ namespace agoraYCE
     int result = 0;
 
     // get the current device id
-    char id[MAX_DEVICE_ID_LENGTH]{};
+    char id[agora::rtc::MAX_DEVICE_ID_LENGTH]{};
     if (_deviceType == eDEVICE_TYPE::kVideoRecording)
     {
       result = m_VideoDeviceManager->getDevice(id);
@@ -930,7 +930,7 @@ namespace agoraYCE
     {
   #if defined(_WIN32)
       char winName[255]{};
-      ::GetWindowText(m_Window, winName, 255);
+      ::GetWindowTextA(m_Window, winName, 255);
       return std::string(winName);
   #endif
     }
@@ -1019,18 +1019,18 @@ namespace agoraYCE
       result = -1;
       while (index >= 0)
       {
-        DISPLAY_DEVICE device;
+        DISPLAY_DEVICEA device;
         device.cb = sizeof(device);
-        if (EnumDisplayDevices(NULL, index++, &device, 0))
+        if (EnumDisplayDevicesA(NULL, index++, &device, 0))
         {
           if (!(device.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP))
           {
             continue;
           }
-          DEVMODE device_mode;
+          DEVMODEA device_mode;
           device_mode.dmSize = sizeof(DEVMODE);
           device_mode.dmDriverExtra = 0;
-          EnumDisplaySettingsEx(device.DeviceName, ENUM_CURRENT_SETTINGS, &device_mode, 0);
+          EnumDisplaySettingsExA(device.DeviceName, ENUM_CURRENT_SETTINGS, &device_mode, 0);
 
           ScreenDevice newScreen;
           newScreen.deviceName = std::string(device.DeviceName);
@@ -1090,7 +1090,7 @@ namespace agoraYCE
       for (size_t i = 0; i < windList.size(); i++)
       {
         char winName[255]{};
-        ::GetWindowText(windList.at(i), winName, 255);
+        ::GetWindowTextA(windList.at(i), winName, 255);
         if (_deviceID == std::string(winName))
         {
           m_Window = windList.at(i);
@@ -1161,8 +1161,19 @@ namespace agoraYCE
       return -1;
     }
 
+    agora::rtc::VideoEncoderConfiguration config;
+    config.dimensions.width = _config.width;
+    config.dimensions.height = _config.height;
+    config.frameRate = static_cast<agora::rtc::FRAME_RATE>(_config.frameRate);
+    config.orientationMode = static_cast<agora::rtc::ORIENTATION_MODE>(_config.orientationMode);
+    config.bitrate = _config.bitrate;
+    config.degradationPreference = static_cast<agora::rtc::DEGRADATION_PREFERENCE>(_config.degradationPreference);
+    config.minBitrate = _config.minBitrate;
+    config.minFrameRate = _config.minBitrate;
+    config.mirrorMode = static_cast<agora::rtc::VIDEO_MIRROR_MODE_TYPE>(_config.mirrorMode);
+
     // set the config in engine
-    return m_RtcEngine->setVideoEncoderConfiguration(_config);
+    return m_RtcEngine->setVideoEncoderConfiguration(config);
   }
 
   int AgoraRTC::SetScreenCaptureConfig(const ScreenCaptureConfig& _config) const
@@ -1194,7 +1205,7 @@ namespace agoraYCE
     }
 
     // start/stop the preview local feed visualization
-    return m_RtcEngine->setClientRole(static_cast<CLIENT_ROLE_TYPE>(_roleType));
+    return m_RtcEngine->setClientRole(static_cast<agora::rtc::CLIENT_ROLE_TYPE>(_roleType));
   }
 
   int AgoraRTC::SetRemoteVideoQuality(const unsigned int _userID, const eREMOTE_VIDEO_QUALITY _qualityType) const
@@ -1210,7 +1221,7 @@ namespace agoraYCE
     }
 
     // start/stop the preview local feed visualization
-    return m_RtcEngine->setRemoteVideoStreamType(_userID, static_cast<REMOTE_VIDEO_STREAM_TYPE>(_qualityType));
+    return m_RtcEngine->setRemoteVideoStreamType(_userID, static_cast<agora::rtc::REMOTE_VIDEO_STREAM_TYPE>(_qualityType));
   }
 
   int AgoraRTC::SetRemoteVideoPriority(const unsigned int _userID, const eREMOTE_VIDEO_PRIORITY _priorityType) const
@@ -1226,7 +1237,7 @@ namespace agoraYCE
     }
 
     // start/stop the preview local feed visualization
-    return m_RtcEngine->setRemoteUserPriority(_userID, static_cast<PRIORITY_TYPE>(_priorityType));
+    return m_RtcEngine->setRemoteUserPriority(_userID, static_cast<agora::rtc::PRIORITY_TYPE>(_priorityType));
   }
 
   int AgoraRTC::SetAudioEffect(const eAUDIO_EFFECT _effect) const
@@ -1245,7 +1256,7 @@ namespace agoraYCE
     // set audio profile
     if (_effect == eAUDIO_EFFECT::AUDIO_EFFECT_OFF)
     {
-      result = m_RtcEngine->setAudioProfile(AUDIO_PROFILE_TYPE::AUDIO_PROFILE_DEFAULT, AUDIO_SCENARIO_TYPE::AUDIO_SCENARIO_DEFAULT);
+      result = m_RtcEngine->setAudioProfile(agora::rtc::AUDIO_PROFILE_DEFAULT, agora::rtc::AUDIO_SCENARIO_DEFAULT);
       if (result < 0)
       {
         return result;
@@ -1254,9 +1265,9 @@ namespace agoraYCE
     else
     {
 #if (AGORA_SDK > 312)
-      result = m_RtcEngine->setAudioProfile(AUDIO_PROFILE_TYPE::AUDIO_PROFILE_MUSIC_HIGH_QUALITY_STEREO, AUDIO_SCENARIO_TYPE::AUDIO_SCENARIO_MEETING);
+      result = m_RtcEngine->setAudioProfile(agora::rtc::AUDIO_PROFILE_MUSIC_HIGH_QUALITY_STEREO, agora::rtc::AUDIO_SCENARIO_MEETING);
 #else
-      result = m_RtcEngine->setAudioProfile(AUDIO_PROFILE_TYPE::AUDIO_PROFILE_MUSIC_HIGH_QUALITY_STEREO, AUDIO_SCENARIO_TYPE::AUDIO_SCENARIO_EDUCATION);
+      result = m_RtcEngine->setAudioProfile(agora::rtc::AUDIO_PROFILE_MUSIC_HIGH_QUALITY_STEREO, agora::rtc::AUDIO_SCENARIO_EDUCATION);
 #endif
       if (result < 0)
       {
@@ -1275,7 +1286,7 @@ namespace agoraYCE
     return result;
   }
 
-  int AgoraRTC::SetCameraCapturerConfiguration(const CameraCapturerConfig& _effect) const
+  int AgoraRTC::SetCameraCapturerConfiguration(const CameraCapturerConfig& _config) const
   {
 #if (ENABLE_AGORA_RTC == 0)
     return 0;
@@ -1285,10 +1296,13 @@ namespace agoraYCE
     if (m_RtcEngine == nullptr)
     {
       return -1;
-  }
+    }
+
+    agora::rtc::CameraCapturerConfiguration config;
+    config.preference = static_cast<agora::rtc::CAPTURER_OUTPUT_PREFERENCE>(_config.preference);
 
     // start/stop the preview local feed visualization
-    return m_RtcEngine->setCameraCapturerConfiguration(_effect);
+    return m_RtcEngine->setCameraCapturerConfiguration(config);
   }
 
   int AgoraRTC::EnableRemoteVideoSuperResolution(const unsigned int _userID, const bool _switchFlag) const
@@ -1332,7 +1346,7 @@ namespace agoraYCE
     }
 
     // Sets the content hint for screen sharing.
-    result = m_RtcEngine->setScreenCaptureContentHint(CONTENT_HINT_DETAILS);
+    result = m_RtcEngine->setScreenCaptureContentHint(agora::rtc::CONTENT_HINT_DETAILS);
     if (result < 0)
     {
       return result;
@@ -1388,7 +1402,7 @@ namespace agoraYCE
     }
 
     // Sets the content hint for screen sharing.
-    result = m_RtcEngine->setScreenCaptureContentHint(CONTENT_HINT_DETAILS);
+    result = m_RtcEngine->setScreenCaptureContentHint(agora::rtc::CONTENT_HINT_DETAILS);
     if (result < 0)
     {
       return result;
@@ -1578,21 +1592,21 @@ namespace agoraYCE
     }
 
     // set the default remote stream video type
-    result = m_RtcEngine->setRemoteDefaultVideoStreamType(REMOTE_VIDEO_STREAM_TYPE::REMOTE_VIDEO_STREAM_LOW);
+    result = m_RtcEngine->setRemoteDefaultVideoStreamType(agora::rtc::REMOTE_VIDEO_STREAM_LOW);
     if (result < 0)
     {
       return result;
     }
 
     // set the channel profile (CHANNEL_PROFILE_LIVE_BROADCASTING by default to allow screen share in a normal call)
-    result = m_RtcEngine->setChannelProfile(CHANNEL_PROFILE_LIVE_BROADCASTING);
+    result = m_RtcEngine->setChannelProfile(agora::rtc::CHANNEL_PROFILE_LIVE_BROADCASTING);
     if (result < 0)
     {
       return result;
     }
 
     // set the channel client role
-    result = m_RtcEngine->setClientRole(static_cast<CLIENT_ROLE_TYPE>(_channelParams.clientRole));
+    result = m_RtcEngine->setClientRole(static_cast<agora::rtc::CLIENT_ROLE_TYPE>(_channelParams.clientRole));
     if (result < 0)
     {
       return result;
@@ -1636,8 +1650,18 @@ namespace agoraYCE
       return -1;
     }
 
+    agora::rtc::InjectStreamConfig config;
+    config.audioBitrate = _config.audioBitrate;
+    config.audioChannels = _config.audioChannels;
+    config.audioSampleRate = static_cast<agora::rtc::AUDIO_SAMPLE_RATE_TYPE>(_config.audioSampleRate);
+    config.height = _config.height;
+    config.videoBitrate = _config.videoBitrate;
+    config.videoFramerate = _config.videoFramerate;
+    config.videoGop = _config.videoGop;
+    config.width = _config.width;
+   
     // Push stream
-    return m_RtcEngine->addInjectStreamUrl(_url.c_str(), _config);
+    return m_RtcEngine->addInjectStreamUrl(_url.c_str(), config);
   }
 
   int AgoraRTC::RemoveStreamUrl(const std::string& _url) const
