@@ -427,9 +427,9 @@ namespace agoraYCE
 
   AgoraRTC::~AgoraRTC()
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return;
-  #endif
+#endif
 
     if(m_RtcEngine)
     {
@@ -512,9 +512,9 @@ namespace agoraYCE
 
   int AgoraRTC::StartUp(const std::string& _appID)
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // create the agora engine object 
     m_RtcEngine = createAgoraRtcEngine();
@@ -567,9 +567,9 @@ namespace agoraYCE
 
   std::string AgoraRTC::GetSDKVersion() const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return std::string();
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -584,18 +584,18 @@ namespace agoraYCE
 
   bool AgoraRTC::GetStatus() const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return true;
-  #endif
+#endif
 
     return m_RtcEngine != nullptr;
   }
 
   std::vector<std::string> AgoraRTC::GetDeviceList(const eDEVICE_TYPE _deviceType)
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return std::vector<std::string>();
-  #endif
+#endif
 
     std::vector<std::string> output;
 
@@ -695,9 +695,9 @@ namespace agoraYCE
 
   std::string AgoraRTC::GetDeviceID(const std::string& _deviceName, const eDEVICE_TYPE _deviceType)
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return std::string();
-  #endif
+#endif
     std::string output;
 
     // avoid all if the rtc engine are not ready
@@ -791,9 +791,9 @@ namespace agoraYCE
 
   std::string AgoraRTC::GetDeviceName(const std::string& _deviceID, const eDEVICE_TYPE _deviceType)
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return std::string();
-  #endif
+#endif
     std::string output;
 
     // avoid all if the rtc engine are not ready
@@ -887,9 +887,9 @@ namespace agoraYCE
 
   std::string AgoraRTC::GetCurrentDevice(const eDEVICE_TYPE _deviceType)
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return std::string();
-  #endif
+#endif
     std::string output;
 
     // avoid all if the rtc engine are not ready
@@ -944,9 +944,9 @@ namespace agoraYCE
 
   float AgoraRTC::GetAudioRecordingVolume() const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0.0f;
-  #endif
+#endif
 
     // avoid all if the rtc engine are not ready
     if (m_RtcEngine == nullptr || m_AudioDeviceManager.get() == nullptr)
@@ -961,9 +961,9 @@ namespace agoraYCE
 
   float AgoraRTC::GetAudioPlaybackVolume() const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0.0f;
-  #endif
+#endif
 
     // avoid all if the rtc engine are not ready
     if (m_RtcEngine == nullptr || m_AudioDeviceManager.get() == nullptr)
@@ -977,9 +977,9 @@ namespace agoraYCE
 
   int AgoraRTC::SetCurrentDeviceByID(const std::string& _deviceID, const eDEVICE_TYPE _deviceType)
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid all if the rtc engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1108,18 +1108,18 @@ namespace agoraYCE
 
   int AgoraRTC::SetCurrentDeviceByName(const std::string& _deviceName, const eDEVICE_TYPE _deviceType)
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     return SetCurrentDeviceByID(GetDeviceID(_deviceName, _deviceType), _deviceType);
   }
 
   int AgoraRTC::SetAudioRecordingVolume(const float _volume) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid all if the rtc engine are not ready
     if (m_RtcEngine == nullptr || m_AudioDeviceManager.get() == nullptr)
@@ -1134,9 +1134,9 @@ namespace agoraYCE
 
   int AgoraRTC::SetAudioPlaybackVolume(const float _volume) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid all if the rtc engine are not ready
     if (m_RtcEngine == nullptr || m_AudioDeviceManager.get() == nullptr)
@@ -1151,9 +1151,9 @@ namespace agoraYCE
 
   int AgoraRTC::SetVideoEncoderConfiguration(const VideoEncoderConfig& _config) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1167,9 +1167,9 @@ namespace agoraYCE
 
   int AgoraRTC::SetScreenCaptureConfig(const ScreenCaptureConfig& _config) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1183,9 +1183,9 @@ namespace agoraYCE
 
   int AgoraRTC::SetClientRole(const eCLIENT_ROLE _roleType) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1199,9 +1199,9 @@ namespace agoraYCE
 
   int AgoraRTC::SetRemoteVideoQuality(const unsigned int _userID, const eREMOTE_VIDEO_QUALITY _qualityType) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1215,9 +1215,9 @@ namespace agoraYCE
 
   int AgoraRTC::SetRemoteVideoPriority(const unsigned int _userID, const eREMOTE_VIDEO_PRIORITY _priorityType) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1231,9 +1231,9 @@ namespace agoraYCE
 
   int AgoraRTC::SetAudioEffect(const eAUDIO_EFFECT _effect) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1253,7 +1253,11 @@ namespace agoraYCE
     }
     else
     {
+#if (AGORA_SDK > 312)
       result = m_RtcEngine->setAudioProfile(AUDIO_PROFILE_TYPE::AUDIO_PROFILE_MUSIC_HIGH_QUALITY_STEREO, AUDIO_SCENARIO_TYPE::AUDIO_SCENARIO_MEETING);
+#else
+      result = m_RtcEngine->setAudioProfile(AUDIO_PROFILE_TYPE::AUDIO_PROFILE_MUSIC_HIGH_QUALITY_STEREO, AUDIO_SCENARIO_TYPE::AUDIO_SCENARIO_EDUCATION);
+#endif
       if (result < 0)
       {
         return result;
@@ -1261,7 +1265,9 @@ namespace agoraYCE
     }
   
     // set effect
+#if (AGORA_SDK > 312)
     result = m_RtcEngine->setAudioEffectPreset(static_cast<AUDIO_EFFECT_PRESET>(_effect));
+#endif
     if (result < 0)
     {
       return result;
@@ -1271,9 +1277,9 @@ namespace agoraYCE
 
   int AgoraRTC::SetCameraCapturerConfiguration(const CameraCapturerConfig& _effect) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1287,9 +1293,9 @@ namespace agoraYCE
 
   int AgoraRTC::EnableRemoteVideoSuperResolution(const unsigned int _userID, const bool _switchFlag) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1298,14 +1304,18 @@ namespace agoraYCE
     }
 
     // start/stop the preview local feed visualization
+#if (AGORA_SDK > 312)
     return m_RtcEngine->enableRemoteSuperResolution(_userID, _switchFlag);
+#else
+    return 0;
+#endif
   }
 
   int AgoraRTC::EnableScreenShare(const bool _switchFlag, const ScreenCaptureConfig& _config)
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1360,9 +1370,9 @@ namespace agoraYCE
 
   int AgoraRTC::EnableWindowShare(const bool _switchFlag, const ScreenCaptureConfig& _config)
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1475,9 +1485,9 @@ namespace agoraYCE
 
   int AgoraRTC::EnableVideoRecordingTest(const bool _switchFlag) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1500,9 +1510,9 @@ namespace agoraYCE
 
   int AgoraRTC::EnableAudioRecordingTest(const bool _switchFlag) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1528,9 +1538,9 @@ namespace agoraYCE
 
   int AgoraRTC::JoinChannel(const ChannelParams& _channelParams) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1600,9 +1610,9 @@ namespace agoraYCE
 
   int AgoraRTC::LeaveChannel() const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1616,9 +1626,9 @@ namespace agoraYCE
 
   int AgoraRTC::PublishStreamUrl(const std::string& _url, const StreamConfig& _config) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)
@@ -1632,9 +1642,9 @@ namespace agoraYCE
 
   int AgoraRTC::RemoveStreamUrl(const std::string& _url) const
   {
-  #if (ENABLE_AGORA_RTC == 0)
+#if (ENABLE_AGORA_RTC == 0)
     return 0;
-  #endif
+#endif
 
     // avoid bad calls if the engine are not ready
     if (m_RtcEngine == nullptr)

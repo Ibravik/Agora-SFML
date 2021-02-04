@@ -1,6 +1,7 @@
 
 #pragma once
 #define ENABLE_AGORA_RTC 1
+#define AGORA_SDK 312
 
 #include <string>
 #include <functional>

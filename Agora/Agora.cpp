@@ -166,66 +166,56 @@ struct userInfo
 userInfo g_LocalUser;
 std::map<unsigned int, userInfo> g_RemoteUser;
 
+// log system
+void log(const std::string& _log)
+{
+  std::ofstream log("log", std::ios::app);
+  if (log.is_open())
+  {
+    log << _log.c_str();
+    log.close();
+  }
+}
+
 // Agora logs callbacks------------------------------------------------------------------------
 
 void onWarning(const WarnInfo& _info)
 {
-  std::ofstream log("log.txt", std::ios::app);
-  if (log.is_open())
-  {
-    log << "-onWarning()- warn:" << _info.warn << " msg:" << _info.msg << "\n";
-    log.close();
-  }
+  log(std::string("-onWarning()- warn:") + std::to_string(_info.warn) + 
+      std::string(" msg:") + _info.msg + std::string("\n"));
 }
 
 void onError(const ErrorInfo& _info)
 {
-  std::ofstream log("log.txt", std::ios::app);
-  if (log.is_open())
-  {
-    log << "-onError()- err:" << _info.err << " msg:" << _info.msg << "\n";
-    log.close();
-  }
+  log(std::string("-onError()- err:") + std::to_string(_info.err) + 
+      std::string(" msg:") + _info.msg + std::string("\n"));
 }
 
 void onJoinChannelSuccess(const JoinChannelInfo& _info)
 {
-  std::ofstream log("log.txt", std::ios::app);
-  if (log.is_open())
-  {
-    log << "-onJoinChannelSuccess()- uid:" << _info.uid << " elapsed:" << _info.elapsed << " channel:" << _info.channel << "\n";
-    log.close();
-  }
+  log(std::string("-onJoinChannelSuccess()- uid:") + std::to_string(_info.uid) + 
+                  std::string(" elapsed:") + std::to_string(_info.elapsed) + 
+                  std::string(" channel:") + _info.channel +
+                  std::string("\n"));
 }
 
 void onLeaveChannel(const CallStatsInfo& _info)
 {
-  std::ofstream log("log.txt", std::ios::app);
-  if (log.is_open())
-  {
-    log << "-onLeaveChannel()- users in call:" << _info.userCount << "\n";
-    log.close();
-  }
+  log(std::string("-onLeaveChannel()- users in call:") + std::to_string(_info.userCount) + 
+      std::string("\n"));
 }
 
 void onClientRoleChanged(const RoleChangedInfo& _info)
 {
-  std::ofstream log("log.txt", std::ios::app);
-  if (log.is_open())
-  {
-    log << "-onClientRoleChanged()- new Role:" << _info.newRole << " old Role:" << _info.oldRole << "\n";
-    log.close();
-  }
+  log(std::string("-onClientRoleChanged()- new Role:") + std::to_string(_info.newRole) + 
+      std::string(" old Role:") + std::to_string(_info.oldRole) + 
+      std::string("\n"));
 }
 
 void onConnectionLost()
 {
-  std::ofstream log("log.txt", std::ios::app);
-  if (log.is_open())
-  {
-    log << "-onConnectionLost()-" << "\n";
-    log.close();
-  }
+  log(std::string("-onConnectionLost()") +
+      std::string("\n"));
 }
 
 void onRtcStats(const CallStatsInfo& _info)
@@ -235,32 +225,24 @@ void onRtcStats(const CallStatsInfo& _info)
 
 void onStreamMessageError(const StreamErrorInfo& _info)
 {
-  std::ofstream log("log.txt", std::ios::app);
-  if (log.is_open())
-  {
-    log << "-onStreamMessageError()- code:" << _info.code << " stream Id:" << _info.streamId << "\n";
-    log.close();
-  }
+  log(std::string("-onStreamMessageError()- code:") + std::to_string(_info.code) +
+      std::string(" stream Id:") + std::to_string(_info.streamId) +
+      std::string("\n"));
 }
 
 void onStreamInjectedStatus(const StreamStatusInfo& _info)
 {
-  std::ofstream log("log.txt", std::ios::app);
-  if (log.is_open())
-  {
-    log << "-onStreamInjectedStatus()- uid:" << _info.uid << " status:" << _info.status << " url:" << _info.url << "\n";
-    log.close();
-  }
+  log(std::string("-onStreamInjectedStatus()- uid:") + std::to_string(_info.uid) +
+      std::string(" status:") + std::to_string(_info.status) +
+      std::string(" url:") + _info.url +
+      std::string("\n"));
 }
 
 void onUserJoined(const UserJoinInfo& _info)
 {
-  std::ofstream log("log.txt", std::ios::app);
-  if (log.is_open())
-  {
-    log << "-onUserJoined()- uid:" << _info.uid << " elapsed:" << _info.elapsed << "\n";
-    log.close();
-  }
+  log(std::string("-onUserJoined()- uid:") + std::to_string(_info.uid) +
+      std::string(" elapsed:") + std::to_string(_info.elapsed) +
+      std::string("\n"));
 }
 
 void onActiveSpeaker(const unsigned int _uid)
@@ -270,32 +252,24 @@ void onActiveSpeaker(const unsigned int _uid)
 
 void onRtmpStreamingStateChanged(const StreamingStateChangedInfo& _info)
 {
-  std::ofstream log("log.txt", std::ios::app);
-  if (log.is_open())
-  {
-    log << "-onRtmpStreamingStateChanged()- errorCode:" << _info.errCode << " state:" << _info.state << " url:" << _info.url << "\n";
-    log.close();
-  }
+  log(std::string("-onRtmpStreamingStateChanged()- errorCode:") + std::to_string(_info.errCode) +
+      std::string(" state:") + std::to_string(_info.state) +
+      std::string(" url:") + _info.url +
+      std::string("\n"));
 }
 
 void onRtmpStreamingEvent(const StreamingEventInfo& _info)
 {
-  std::ofstream log("log.txt", std::ios::app);
-  if (log.is_open())
-  {
-    log << "-onRtmpStreamingEvent()- eventCode:" << _info.eventCode << " url:" << _info.url << "\n";
-    log.close();
-  }
+  log(std::string("-onRtmpStreamingEvent()- eventCode:") + std::to_string(_info.eventCode) +
+      std::string(" url:") + _info.url +
+      std::string("\n"));
 }
 
 void onUserOffline(const UserOfflineInfo& _info)
 {
-  std::ofstream log("log.txt", std::ios::app);
-  if (log.is_open())
-  {
-    log << "-onUserOffline()- uid:" << _info.uid << " reason:" << _info.reason << "\n";
-    log.close();
-  }
+  log(std::string("-onUserOffline()- uid:") + std::to_string(_info.uid) +
+      std::string(" reason:") + std::to_string(_info.reason) +
+      std::string("\n"));
 
   // erase the remote user info
   if (g_RemoteUser.find(_info.uid) != g_RemoteUser.end())
@@ -363,13 +337,13 @@ void consoleWindow()
     {
       // clean log
       std::ofstream log;
-      log.open("log.txt", std::ofstream::out | std::ofstream::trunc);
+      log.open("log", std::ofstream::out | std::ofstream::trunc);
       log.close();
     }
 
     // Read the log file
     std::string line;
-    std::ifstream log("log.txt");
+    std::ifstream log("log");
     if (log.is_open())
     {
       while (getline(log, line))
@@ -1153,7 +1127,9 @@ void gridWindow()
       desc += std::to_string(g_LocalUser.height);
       desc += std::string(") ");
       desc += std::to_string(g_LocalUser.bitrate);
-      desc += std::string("kb");
+      desc += std::string("kb ");
+      desc += std::to_string(g_LocalUser.fps);
+      desc += std::string("fps");
       ImGui::Image(g_LocalUser.frame.texture, g_LocalFrameMaxSize,
                    (g_LocalUser.videoStreamMute ? videoMute : videoUnmute),
                    (g_LocalUser.audioStreamMute ? audioMute : (g_ChannelTabs[0].activeSpeaker == uid ? talk : audioUnmute)));
@@ -1192,7 +1168,9 @@ void gridWindow()
           desc += std::to_string(remoteUser.second.height);
           desc += std::string(") ");
           desc += std::to_string(remoteUser.second.bitrate);
-          desc += std::string("kb");
+          desc += std::string("kb ");
+          desc += std::to_string(remoteUser.second.fps);
+          desc += std::string("fps");
           ImGui::Image(remoteUser.second.frame.texture, g_FrameMaxSize,
                        (remoteUser.second.videoStreamMute ? videoMute : videoUnmute),
                        (remoteUser.second.audioStreamMute ? audioMute : (g_ChannelTabs[0].activeSpeaker == ruid ? talk : audioUnmute)));
@@ -1296,6 +1274,8 @@ void updateLocalFrame(const VideoBuffer& _bufferInfo)
   // reset the local frame texture
   if (resetTexture)
   {
+    log(std::string("-updateLocalFrame()-") + 
+        std::string(" size:") + std::to_string(_bufferInfo.width) + std::string("x") + std::to_string(_bufferInfo.height));
     if (g_LocalUser.frame.buffer != nullptr)
     {
       delete[] g_LocalUser.frame.buffer;
@@ -1326,10 +1306,12 @@ void updateRemoteFrame(const VideoBuffer& _bufferInfo, const unsigned int _clien
   sf::Vector2u bufferSize(static_cast<unsigned int>(_bufferInfo.width), static_cast<unsigned int>(_bufferInfo.height));
   int bufferLenght = int(bufferSize.x) * int(bufferSize.y) * 4;
   bool resetTexture = (textureSize.x != bufferSize.x || textureSize.y != bufferSize.y);
-
+  
   // reset the local frame texture
   if (resetTexture)
   {
+    log(std::string("-updateRemoteFrame()- uid:") + std::to_string(_clientID) + 
+        std::string(" size:") + std::to_string(_bufferInfo.width) + std::string("x") + std::to_string(_bufferInfo.height));
     if (remoteFrame.frame.buffer != nullptr)
     {
       delete[] remoteFrame.frame.buffer;
@@ -1362,7 +1344,7 @@ void startUp()
   }
 
   std::ofstream log;
-  log.open("log.txt", std::ofstream::out | std::ofstream::trunc);
+  log.open("log", std::ofstream::out | std::ofstream::trunc);
   log.close();
 
   AgoraRTC& agoraObj = GetAgoraRTC();
