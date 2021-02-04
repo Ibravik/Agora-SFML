@@ -12,6 +12,8 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Graphics/Texture.hpp>
 
+using namespace agoraYCE;
+
 // Misc settings
 const int stringLength = 2048;
 
@@ -91,6 +93,7 @@ std::vector<std::string> g_VideoRecordingDeviceList;
 std::vector<std::string> g_AudioRecordingDeviceList;
 std::vector<std::string> g_AudioPlaybackDeviceList;
 std::vector<std::string> g_ScreenDeviceList;
+std::vector<std::string> g_WindowList;
 std::vector<int> g_FrameRate{
   1, 7, 10, 15, 24, 30, 60
 };
@@ -135,6 +138,7 @@ struct userInfo
   bool videoStreamPriority;
   bool videoSuperResolution;
   bool screenShare;
+  bool windowShare;
   int fps;
   int width;
   int height;
@@ -149,6 +153,7 @@ struct userInfo
     videoStreamPriority(false),
     videoSuperResolution(false),
     screenShare(false),
+    windowShare(false),
     fps(0),
     width(0),
     height(0),
@@ -739,6 +744,10 @@ void showDeviceComboBox(eDEVICE_TYPE _deviceType, int& _index, std::vector<std::
   {
     tittle = "Screen Share";
   }
+  else if (_deviceType == eDEVICE_TYPE::kWindow)
+  {
+    tittle = "Window Share";
+  }
 
   // current selected label
   static std::string label = "No Device Connected";
@@ -785,7 +794,29 @@ void videoConfig()
   // enable screen share
   if (ImGui::Checkbox(g_LocalUser.screenShare ? "Disable Screen Share" : "Enable Screen Share", &g_LocalUser.screenShare))
   {
+    if (g_LocalUser.screenShare)
+    {
+      if (g_LocalUser.windowShare)
+      {
+        g_LocalUser.windowShare = false;
+        agoraObj.EnableWindowShare(g_LocalUser.windowShare, screenCapture);
+      }
+    }
     agoraObj.EnableScreenShare(g_LocalUser.screenShare, screenCapture);
+  }
+
+  // enable window share
+  if (ImGui::Checkbox(g_LocalUser.windowShare ? "Disable window Share" : "Enable window Share", &g_LocalUser.windowShare))
+  {
+    if (g_LocalUser.windowShare)
+    {
+      if (g_LocalUser.screenShare)
+      {
+        g_LocalUser.screenShare = false;
+        agoraObj.EnableScreenShare(g_LocalUser.screenShare, screenCapture);
+      }
+    }
+    agoraObj.EnableWindowShare(g_LocalUser.windowShare, screenCapture);
   }
 
   // enable local video stream
@@ -795,13 +826,25 @@ void videoConfig()
   }
   ImGui::Separator();
 
-  if (g_LocalUser.screenShare)
+  if (g_LocalUser.screenShare || g_LocalUser.windowShare)
   {
-    static int screenIndex = 0;
     static int screenSize[2] = { screenCapture.dimensions.width, screenCapture.dimensions.height };
+    if (g_LocalUser.windowShare)
+    {
+      static int windowIndex = 0;
 
-    // screen capture settings
-    showDeviceComboBox(eDEVICE_TYPE::kScreen, screenIndex, g_ScreenDeviceList);
+      // screen settings
+      showDeviceComboBox(eDEVICE_TYPE::kWindow, windowIndex, g_WindowList);
+    }
+    else
+    {
+      static int screenIndex = 0;
+      
+
+      // screen capture settings
+      showDeviceComboBox(eDEVICE_TYPE::kScreen, screenIndex, g_ScreenDeviceList);
+    }
+
     if (ImGui::InputInt2("Video frame dimensions(w/h)", screenSize))
     {
       screenSize[0] = (screenSize[0] < 0 ? 0 : screenSize[0]);
@@ -817,7 +860,7 @@ void videoConfig()
     }
     ImGui::Checkbox(screenCapture.captureMouseCursor ? "Disable Mouse Capture" : "Enable Mouse Capture", &screenCapture.captureMouseCursor);
     ImGui::Separator();
-    if (ImGui::Button("Apply Screen Capture Settings"))
+    if (ImGui::Button("Apply Capture Settings"))
     {
       screenCapture.dimensions.width = screenSize[0];
       screenCapture.dimensions.height = screenSize[1];
@@ -1349,6 +1392,7 @@ void startUp()
   g_AudioRecordingDeviceList = agoraObj.GetDeviceList(eDEVICE_TYPE::kAudioRecording);
   g_AudioPlaybackDeviceList = agoraObj.GetDeviceList(eDEVICE_TYPE::kAudioPlayback);
   g_ScreenDeviceList = agoraObj.GetDeviceList(eDEVICE_TYPE::kScreen);
+  g_WindowList = agoraObj.GetDeviceList(eDEVICE_TYPE::kWindow);
 }
 
 void update()
