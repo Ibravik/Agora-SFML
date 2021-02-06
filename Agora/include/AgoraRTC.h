@@ -7,17 +7,29 @@
 #include <functional>
 #include <map>
 #include <vector>
+
+#if defined(UE_BUILD_DEBUG) || defined(UE_BUILD_DEVELOPMENT) || defined(UE_BUILD_TEST) || defined(UE_BUILD_SHIPPING) || defined(UE_GAME) || defined(UE_EDITOR)
+#include <Agora/IAgoraRtcEngine.h>
+#include <Agora/IAgoraMediaEngine.h>
+#include <Agora/IAgoraRtcChannel.h>
+#else
 #include <IAgoraRtcEngine.h>
 #include <IAgoraMediaEngine.h>
 #include <IAgoraRtcChannel.h>
+#define AGORAYCE_API
+#endif
 
 /**
- * @brief   The follow struct only show an interface for the event message info that the SDK 
+ * @brief   The follow struct only show an interface for the event message info that the SDK
  *          send.
  * @Note    I did not add comments since all the info are in the agora SDK code :).
  */
 namespace agoraYCE
 {
+  using namespace agora;
+  using namespace agora::rtc;
+  using namespace agora::media;
+
   struct WarnInfo
   {
     int warn;
@@ -32,23 +44,70 @@ namespace agoraYCE
     int err;
     std::string msg;
 
-    ErrorInfo() : 
-      err(0){}
+    ErrorInfo() :
+      err(0) {}
   };
 
   struct JoinChannelInfo
   {
-    std::string channel; 
-    unsigned int uid; 
+    std::string channel;
+    unsigned int uid;
     int elapsed;
 
     JoinChannelInfo() :
-      uid(0), 
+      uid(0),
       elapsed(0) {}
   };
 
-  struct CallStatsInfo : public agora::rtc::RtcStats 
-  { 
+  struct CallStatsInfo
+  {
+    unsigned int duration;
+    unsigned int txBytes;
+    unsigned int rxBytes;
+    unsigned int txAudioBytes;
+    unsigned int txVideoBytes;
+    unsigned int rxAudioBytes;
+    unsigned int rxVideoBytes;
+    unsigned short txKBitRate;
+    unsigned short rxKBitRate;
+    unsigned short rxAudioKBitRate;
+    unsigned short txAudioKBitRate;
+    unsigned short rxVideoKBitRate;
+    unsigned short txVideoKBitRate;
+    unsigned short lastmileDelay;
+    unsigned short txPacketLossRate;
+    unsigned short rxPacketLossRate;
+    unsigned int userCount;
+    double cpuAppUsage;
+    double cpuTotalUsage;
+    int gatewayRtt;
+    double memoryAppUsageRatio;
+    double memoryTotalUsageRatio;
+    int memoryAppUsageInKbytes;
+    CallStatsInfo()
+      : duration(0)
+      , txBytes(0)
+      , rxBytes(0)
+      , txAudioBytes(0)
+      , txVideoBytes(0)
+      , rxAudioBytes(0)
+      , rxVideoBytes(0)
+      , txKBitRate(0)
+      , rxKBitRate(0)
+      , rxAudioKBitRate(0)
+      , txAudioKBitRate(0)
+      , rxVideoKBitRate(0)
+      , txVideoKBitRate(0)
+      , lastmileDelay(0)
+      , txPacketLossRate(0)
+      , rxPacketLossRate(0)
+      , userCount(0)
+      , cpuAppUsage(0)
+      , cpuTotalUsage(0)
+      , gatewayRtt(0)
+      , memoryAppUsageRatio(0)
+      , memoryTotalUsageRatio(0)
+      , memoryAppUsageInKbytes(0) {}
   };
 
   struct RoleChangedInfo
@@ -56,8 +115,8 @@ namespace agoraYCE
     int oldRole;
     int newRole;
 
-    RoleChangedInfo() : 
-      oldRole(0), 
+    RoleChangedInfo() :
+      oldRole(0),
       newRole(0) {}
   };
 
@@ -68,29 +127,29 @@ namespace agoraYCE
     int code;
     int missed;
     int cached;
-  
-    StreamErrorInfo() : 
-      uid(0), 
-      streamId(0), 
-      code(0), 
-      missed(0), 
+
+    StreamErrorInfo() :
+      uid(0),
+      streamId(0),
+      code(0),
+      missed(0),
       cached(0) {}
   };
 
   struct StreamStatusInfo
   {
     std::string url;
-    unsigned int uid; 
+    unsigned int uid;
     int status;
-  
-    StreamStatusInfo() : 
-      uid(0), 
+
+    StreamStatusInfo() :
+      uid(0),
       status(0) {}
   };
 
   struct UserJoinInfo
   {
-    unsigned int uid; 
+    unsigned int uid;
     int elapsed;
 
     UserJoinInfo() :
@@ -111,11 +170,11 @@ namespace agoraYCE
 
   struct StreamingEventInfo
   {
-    std::string url; 
+    std::string url;
     int eventCode;
 
     StreamingEventInfo() :
-      eventCode(0){}
+      eventCode(0) {}
   };
 
   struct StreamPublishedInfo
@@ -134,25 +193,83 @@ namespace agoraYCE
 
     UserOfflineInfo() :
       uid(0),
-      reason(0){}
+      reason(0) {}
   };
 
-  struct RemoteVideoStatsInfo : public agora::rtc::RemoteVideoStats
+  struct RemoteVideoStatsInfo
   {
+    unsigned int uid;
+    int delay;
+    int width;
+    int height;
+    int receivedBitrate;
+    int decoderOutputFrameRate;
+    int rendererOutputFrameRate;
+    int packetLossRate;
+    int rxStreamType;
+    int totalFrozenTime;
+    int frozenRate;
+    int totalActiveTime;
+    int publishDuration;
+
+    RemoteVideoStatsInfo() :
+      uid(0),
+      delay(0),
+      width(0),
+      height(0),
+      receivedBitrate(0),
+      decoderOutputFrameRate(0),
+      rendererOutputFrameRate(0),
+      packetLossRate(0),
+      rxStreamType(0),
+      totalFrozenTime(0),
+      frozenRate(0),
+      totalActiveTime(0),
+      publishDuration(0) {}
   };
 
-  struct LocalVideoStatsInfo : public agora::rtc::LocalVideoStats
+  struct LocalVideoStatsInfo
   {
+    int sentBitrate;
+    int sentFrameRate;
+    int encoderOutputFrameRate;
+    int rendererOutputFrameRate;
+    int targetBitrate;
+    int targetFrameRate;
+    int qualityAdaptIndication;
+    int encodedBitrate;
+    int encodedFrameWidth;
+    int encodedFrameHeight;
+    int encodedFrameCount;
+    int codecType;
+    unsigned short txPacketLossRate;
+    int captureFrameRate;
+
+    LocalVideoStatsInfo() :
+      sentBitrate(0),
+      sentFrameRate(0),
+      encoderOutputFrameRate(0),
+      rendererOutputFrameRate(0),
+      targetBitrate(0),
+      targetFrameRate(0),
+      qualityAdaptIndication(0),
+      encodedBitrate(0),
+      encodedFrameWidth(0),
+      encodedFrameHeight(0),
+      encodedFrameCount(0),
+      codecType(0),
+      txPacketLossRate(0),
+      captureFrameRate(0) {}
   };
 
-  /** 
-   * @brief   The AgoraRTC uses the EventHandler interface class to send callbacks to the 
+  /**
+   * @brief   The AgoraRTC uses the EventHandler interface class to send callbacks to the
    *          application.
-   * @Note    You can find the description for all override functions in the parent class. Also, 
-   *          not all the available events are exposed here, fell free to add another one in 
-   *          necessary cases. 
+   * @Note    You can find the description for all override functions in the parent class. Also,
+   *          not all the available events are exposed here, fell free to add another one in
+   *          necessary cases.
    */
-  class EventHandler : public agora::rtc::IRtcEngineEventHandler
+  class AGORAYCE_API EventHandler : public IRtcEngineEventHandler
   {
     /**
      * Class variables---------------------------------------------------------------------------
@@ -195,31 +312,31 @@ namespace agoraYCE
     void SetOnUserOffline(std::function<void(const UserOfflineInfo& _info)> _callback);
     void SetOnRemoteVideoStats(std::function<void(const RemoteVideoStatsInfo& _info)> _callback);
     void SetOnLocalVideoStats(std::function<void(const LocalVideoStatsInfo& _info)> _callback);
-  
+
     /**
      * Class functions override------------------------------------------------------------------
      */
   private:
     void onWarning(int warn, const char* msg) override;
     void onError(int err, const char* msg) override;
-    void onJoinChannelSuccess(const char* channel, agora::rtc::uid_t uid, int elapsed) override;
-    void onLeaveChannel(const agora::rtc::RtcStats& stats) override;
-    void onClientRoleChanged(agora::rtc::CLIENT_ROLE_TYPE oldRole, agora::rtc::CLIENT_ROLE_TYPE newRole) override;
+    void onJoinChannelSuccess(const char* channel, uid_t uid, int elapsed) override;
+    void onLeaveChannel(const RtcStats& stats) override;
+    void onClientRoleChanged(CLIENT_ROLE_TYPE oldRole, CLIENT_ROLE_TYPE newRole) override;
     void onConnectionLost() override;
-    void onRtcStats(const agora::rtc::RtcStats& stats) override;
-    void onStreamMessageError(agora::rtc::uid_t uid, int streamId, int code, int missed, int cached) override;
-    void onStreamInjectedStatus(const char* url, agora::rtc::uid_t uid, int status) override;
-    void onUserJoined(agora::rtc::uid_t uid, int elapsed) override;
-    void onActiveSpeaker(agora::rtc::uid_t uid) override;
-    void onRtmpStreamingStateChanged(const char* url, agora::rtc::RTMP_STREAM_PUBLISH_STATE state, agora::rtc::RTMP_STREAM_PUBLISH_ERROR errCode) override;
-    void onRtmpStreamingEvent(const char* url, agora::rtc::RTMP_STREAMING_EVENT eventCode) override;
-    void onUserOffline(agora::rtc::uid_t uid, agora::rtc::USER_OFFLINE_REASON_TYPE reason) override;
-    void onRemoteVideoStats(const agora::rtc::RemoteVideoStats& stats) override;
-    void onLocalVideoStats(const agora::rtc::LocalVideoStats& stats) override;
+    void onRtcStats(const RtcStats& stats) override;
+    void onStreamMessageError(uid_t uid, int streamId, int code, int missed, int cached) override;
+    void onStreamInjectedStatus(const char* url, uid_t uid, int status) override;
+    void onUserJoined(uid_t uid, int elapsed) override;
+    void onActiveSpeaker(uid_t uid) override;
+    void onRtmpStreamingStateChanged(const char* url, RTMP_STREAM_PUBLISH_STATE state, RTMP_STREAM_PUBLISH_ERROR errCode) override;
+    void onRtmpStreamingEvent(const char* url, RTMP_STREAMING_EVENT eventCode) override;
+    void onUserOffline(uid_t uid, USER_OFFLINE_REASON_TYPE reason) override;
+    void onRemoteVideoStats(const RemoteVideoStats& stats) override;
+    void onLocalVideoStats(const LocalVideoStats& stats) override;
   };
 
   /**
-   * @brief   The follow struct only show an interface for the info and settings send by agora 
+   * @brief   The follow struct only show an interface for the info and settings send by agora
    *          every frame for the frame capture.
    * @Note    I did not add comments since all the info are in the agora SDK code.
    */
@@ -238,20 +355,20 @@ namespace agoraYCE
   };
 
   /**
-   * @brief   The porpoise of the following class is to allow to take the agora video local and 
+   * @brief   The porpoise of the following class is to allow to take the agora video local and
    *          remote buffers, putting in a unreal texture to use it.
    * @Note    You can find the description for all override functions in the parent class. Also,
    *          not all the available events are exposed here, fell free to add another one in
    *          necessary cases.
    */
-  class VideoFrameObserver : public agora::media::IVideoFrameObserver
+  class AGORAYCE_API VideoFrameObserver : public IVideoFrameObserver
   {
     /**
      * Class variables---------------------------------------------------------------------------
      */
   private:
-    std::function<void(const VideoBuffer& _bufferInfo)> m_OnCaptureLocalFrame;
-    std::function<void(const VideoBuffer& _bufferInfo, const unsigned int _clientID)> m_OnCaptureRemoteFrame;
+    std::function<void(const VideoBuffer& _bufferInfo)> m_OnCaptureLocalFrame = nullptr;
+    std::function<void(const VideoBuffer& _bufferInfo, const unsigned int _clientID)> m_OnCaptureRemoteFrame = nullptr;
 
     /**
      * Class set functions-----------------------------------------------------------------------
@@ -259,7 +376,7 @@ namespace agoraYCE
   public:
     void SetOnCaptureVideoFrameCallback(std::function<void(const VideoBuffer& _bufferInfo)> _callback);
     void SetOnRenderVideoFrameCallback(std::function<void(const VideoBuffer& _bufferInfo, const unsigned int _clientID)> _callback);
-  
+
     /**
      * Class functions override------------------------------------------------------------------
      */
@@ -290,8 +407,8 @@ namespace agoraYCE
     kAUDIENCE = 2
   };
 
-  /** 
-   * @brief   Remote video stream types. 
+  /**
+   * @brief   Remote video stream types.
    */
   enum class eREMOTE_VIDEO_QUALITY
   {
@@ -299,7 +416,7 @@ namespace agoraYCE
     kLOW = 1,
   };
 
-  /** 
+  /**
    * @brief   The priority of the remote user.
    */
   enum class eREMOTE_VIDEO_PRIORITY
@@ -308,7 +425,7 @@ namespace agoraYCE
     kNORMAL = 100,
   };
 
-  /** 
+  /**
    * @brief   The options for SDK preset audio effects.
    */
   enum class eAUDIO_EFFECT
@@ -347,7 +464,7 @@ namespace agoraYCE
 
     ChannelParams() :
       clientRole(eCLIENT_ROLE::kBROADCASTER),
-      clientID(0){}
+      clientID(0) {}
   };
 
   /**
@@ -356,48 +473,48 @@ namespace agoraYCE
   struct VideoEncoderConfig
   {
     /**
-     * @brief   The following table lists the recommended video encoder configurations, where the 
-     *          base bitrate applies to the `COMMUNICATION` profile. Set your bitrate based on 
-     *          this table. If you set a bitrate beyond the proper range, the SDK automatically 
+     * @brief   The following table lists the recommended video encoder configurations, where the
+     *          base bitrate applies to the `COMMUNICATION` profile. Set your bitrate based on
+     *          this table. If you set a bitrate beyond the proper range, the SDK automatically
      *          sets it to within the range.
      */
 
-    /*
-    | Resolution  | Frame Rate (fps) | Live Bitrate (Kbps) |
-    |-------------|------------------|---------------------|
-    | 160 * 120   | 15               | 130                 |
-    | 120 * 120   | 15               | 100                 |
-    | 320 * 180   | 15               | 280                 |
-    | 180 * 180   | 15               | 200                 |
-    | 240 * 180   | 15               | 240                 |
-    | 320 * 240   | 15               | 400                 |
-    | 240 * 240   | 15               | 280                 |
-    | 424 * 240   | 15               | 440                 |
-    | 640 * 360   | 15               | 800                 |
-    | 360 * 360   | 15               | 520                 |
-    | 640 * 360   | 30               | 1200                |
-    | 360 * 360   | 30               | 800                 |
-    | 480 * 360   | 15               | 640                 |
-    | 480 * 360   | 30               | 980                 |
-    | 640 * 480   | 15               | 1000                |
-    | 480 * 480   | 15               | 800                 |
-    | 640 * 480   | 30               | 1500                |
-    | 480 * 480   | 30               | 1200                |
-    | 848 * 480   | 15               | 1220                |
-    | 848 * 480   | 30               | 1860                |
-    | 640 * 480   | 10               | 800                 |
-    | 1280 * 720  | 15               | 2260                |
-    | 1280 * 720  | 30               | 3420                |
-    | 960 * 720   | 15               | 1820                |
-    | 960 * 720   | 30               | 2760                |
-    | 1920 * 1080 | 15               | 4160                |
-    | 1920 * 1080 | 30               | 6300                |
-    | 1920 * 1080 | 60               | 6500                |
-    | 2560 * 1440 | 30               | 6500                |
-    | 2560 * 1440 | 60               | 6500                |
-    | 3840 * 2160 | 30               | 6500                |
-    | 3840 * 2160 | 60               | 6500                |
-    */
+     /*
+     | Resolution  | Frame Rate (fps) | Live Bitrate (Kbps) |
+     |-------------|------------------|---------------------|
+     | 160 * 120   | 15               | 130                 |
+     | 120 * 120   | 15               | 100                 |
+     | 320 * 180   | 15               | 280                 |
+     | 180 * 180   | 15               | 200                 |
+     | 240 * 180   | 15               | 240                 |
+     | 320 * 240   | 15               | 400                 |
+     | 240 * 240   | 15               | 280                 |
+     | 424 * 240   | 15               | 440                 |
+     | 640 * 360   | 15               | 800                 |
+     | 360 * 360   | 15               | 520                 |
+     | 640 * 360   | 30               | 1200                |
+     | 360 * 360   | 30               | 800                 |
+     | 480 * 360   | 15               | 640                 |
+     | 480 * 360   | 30               | 980                 |
+     | 640 * 480   | 15               | 1000                |
+     | 480 * 480   | 15               | 800                 |
+     | 640 * 480   | 30               | 1500                |
+     | 480 * 480   | 30               | 1200                |
+     | 848 * 480   | 15               | 1220                |
+     | 848 * 480   | 30               | 1860                |
+     | 640 * 480   | 10               | 800                 |
+     | 1280 * 720  | 15               | 2260                |
+     | 1280 * 720  | 30               | 3420                |
+     | 960 * 720   | 15               | 1820                |
+     | 960 * 720   | 30               | 2760                |
+     | 1920 * 1080 | 15               | 4160                |
+     | 1920 * 1080 | 30               | 6300                |
+     | 1920 * 1080 | 60               | 6500                |
+     | 2560 * 1440 | 30               | 6500                |
+     | 2560 * 1440 | 60               | 6500                |
+     | 3840 * 2160 | 30               | 6500                |
+     | 3840 * 2160 | 60               | 6500                |
+     */
     int width;
     int height;
     int frameRate;
@@ -459,7 +576,7 @@ namespace agoraYCE
     int h;
   };
 
-  /** 
+  /**
    * @brief   Camera capture configuration.
    */
   struct CameraCapturerConfig
@@ -470,16 +587,27 @@ namespace agoraYCE
   /**
    * @brief   Screen capture configuration.
    */
-  struct ScreenCaptureConfig : public agora::rtc::ScreenCaptureParameters
+  struct ScreenCaptureConfig
   {
-  
+    int width;
+    int height;
+    int frameRate;
+    int bitrate;
+    bool captureMouseCursor;
+
+    ScreenCaptureConfig() :
+      width(1920),
+      height(1080),
+      frameRate(5),
+      bitrate(0),
+      captureMouseCursor(true) {}
   };
 
   /**
-   * @brief   This class handle the communication with Agora SDK. Also allows to disconnect the 
+   * @brief   This class handle the communication with Agora SDK. Also allows to disconnect the
    *          SDK without any consequences.
    */
-  class AgoraRTC
+  class AGORAYCE_API AgoraRTC
   {
   public:
     AgoraRTC();
@@ -488,7 +616,6 @@ namespace agoraYCE
     /**
      * Class variables---------------------------------------------------------------------------
      */
-
   private:
     /**
      * @brief   Default encryption mode used if none one is stetted.
@@ -507,7 +634,7 @@ namespace agoraYCE
     const int cTestInterval = 250;
 
     /**
-     * @brief   Sets the sensitivity of the audio volume indicator. The value ranges between 0 
+     * @brief   Sets the sensitivity of the audio volume indicator. The value ranges between 0
                 and 10. The greater the value, the more sensitive the indicator.
      */
     const int cSmothInterval = 2;
@@ -528,37 +655,37 @@ namespace agoraYCE
     /**
      * @brief   Pointer to the IRtcEngine agora obj.
      */
-    agora::rtc::IRtcEngine* m_RtcEngine = nullptr;
+    IRtcEngine* m_RtcEngine = nullptr;
 
     /**
      * @brief   Pointer to the MediaEngine agora obj.
      */
-    agora::util::AutoPtr<agora::media::IMediaEngine> m_MediaEngine = nullptr;
+    agora::util::AutoPtr<IMediaEngine> m_MediaEngine = nullptr;
 
     /**
      * @brief   Pointer to the Video device manager.
      */
-    agora::util::AutoPtr<agora::rtc::IVideoDeviceManager> m_VideoDeviceManager = nullptr;
+    agora::util::AutoPtr<IVideoDeviceManager> m_VideoDeviceManager = nullptr;
 
     /**
      * @brief   Pointer to the Audio device manager.
      */
-    agora::util::AutoPtr<agora::rtc::IAudioDeviceManager> m_AudioDeviceManager = nullptr;
+    agora::util::AutoPtr<IAudioDeviceManager> m_AudioDeviceManager = nullptr;
 
     /**
      * @brief   Pointer to the Video device collection.
      */
-    agora::rtc::IVideoDeviceCollection* m_VideoRecordingCollection = nullptr;
+    IVideoDeviceCollection* m_VideoRecordingCollection = nullptr;
 
     /**
      * @brief   Pointer to the Audio device recording collection.
      */
-    agora::rtc::IAudioDeviceCollection* m_AudioRecordingCollection = nullptr;
+    IAudioDeviceCollection* m_AudioRecordingCollection = nullptr;
 
     /**
      * @brief   Pointer to the Audio device playback collection.
      */
-    agora::rtc::IAudioDeviceCollection* m_AudioPlaybackCollection = nullptr;
+    IAudioDeviceCollection* m_AudioPlaybackCollection = nullptr;
 
     /**
      * @brief   The current screen device assigned for desktop share.
@@ -571,15 +698,26 @@ namespace agoraYCE
 #if defined(_WIN32)
     HWND m_Window = nullptr;
 #endif
-    /**
-     * @brief   Ugly flag to know if the screen share is ON.
-     */
-    bool m_WindowShareFlag = false;
 
     /**
-     * @brief   Screen capture config.
+     * @brief   Current Screen assigned for capture share.
      */
     ScreenCaptureConfig m_ScreenCaptureConfig;
+
+    /**
+     * @brief   Current video recording device assigned.
+     */
+    std::string m_VideoRecording;
+
+    /**
+     * @brief   Current audio recording device assigned.
+     */
+    std::string m_AudioRecording;
+
+    /**
+     * @brief   Current audio playback device assigned.
+     */
+    std::string m_AudioPlayback;
 
     /**
      * Class functions---------------------------------------------------------------------------
@@ -849,10 +987,10 @@ namespace agoraYCE
      */
     int LeaveChannel() const;
 
-    /** 
+    /**
      * @brief   Publishes the local stream to a specified CDN live RTMP address.  (CDN live only.)
-     * @param   #std::string: The CDN streaming URL in the RTMP format. The maximum length of 
-     *          this parameter is 1024 bytes. The RTMP URL address must not contain special 
+     * @param   #std::string: The CDN streaming URL in the RTMP format. The maximum length of
+     *          this parameter is 1024 bytes. The RTMP URL address must not contain special
      *          characters, such as Chinese language characters.
      * @param   #StreamConfig: The config to inject stream.
      * @bug     No know Bugs.
@@ -860,9 +998,9 @@ namespace agoraYCE
      */
     int PublishStreamUrl(const std::string& _url, const StreamConfig& _config) const;
 
-    /** 
+    /**
      * @brief   Removes an RTMP stream from the CDN. (CDN live only.
-     * @param   #std::string: The RTMP URL address to be removed. The maximum length of this 
+     * @param   #std::string: The RTMP URL address to be removed. The maximum length of this
      *          parameter is 1024 bytes.
      * @bug     No know Bugs.
      * @return  #int: Agora status code.
@@ -880,11 +1018,11 @@ namespace agoraYCE
   };
 
   /**
-   * @brief   Return the unique instance for the manager. If the reference is not ready, then 
+   * @brief   Return the unique instance for the manager. If the reference is not ready, then
    *          create a new one, start up and return it.
    * @param   #std::string: The app key to use in the Agora sdk
    * @bug     No know Bugs.
    * @return  #AgoraRTC: A reference to the unique agora manager object.
    */
-  extern AgoraRTC& GetAgoraRTC(const std::string& _appID = std::string());
+  extern AGORAYCE_API AgoraRTC& GetAgoraRTC(const std::string& _appID = std::string());
 }

@@ -572,7 +572,7 @@ void showChannelTab(bool& _isOpen, channelSettings& _channel)
             g_EnableAudioTest = false;
             agoraObj.EnableAudioRecordingTest(g_EnableAudioTest);
           }
-          
+
           agoraObj.MuteLocalVideoStream(g_LocalUser.videoStreamMute);
           agoraObj.MuteLocalAudioStream(g_LocalUser.audioStreamMute);
           ChannelParams channelParams;
@@ -802,7 +802,7 @@ void videoConfig()
 
   if (g_LocalUser.screenShare || g_LocalUser.windowShare)
   {
-    static int screenSize[2] = { screenCapture.dimensions.width, screenCapture.dimensions.height };
+    static int screenSize[2] = { screenCapture.width, screenCapture.height };
     if (g_LocalUser.windowShare)
     {
       static int windowIndex = 0;
@@ -836,8 +836,8 @@ void videoConfig()
     ImGui::Separator();
     if (ImGui::Button("Apply Capture Settings"))
     {
-      screenCapture.dimensions.width = screenSize[0];
-      screenCapture.dimensions.height = screenSize[1];
+      screenCapture.width = screenSize[0];
+      screenCapture.height = screenSize[1];
       agoraObj.SetScreenCaptureConfig(screenCapture);
     }
   }
