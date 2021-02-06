@@ -1,4 +1,4 @@
--Create a txt (appID.txt) in bin folder
+-Create a txt (appID) in bin folder
 -Paste the app ID given by agora
 -Paste the .dll from sfml & agora in bin/x64
 
