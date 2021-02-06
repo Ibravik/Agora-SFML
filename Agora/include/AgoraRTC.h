@@ -720,6 +720,11 @@ namespace agoraYCE
     std::string m_AudioPlayback;
 
     /**
+     * @brief   Current status of window share.
+     */
+    bool m_WindowCapture = false;
+
+    /**
      * Class functions---------------------------------------------------------------------------
      */
   private:

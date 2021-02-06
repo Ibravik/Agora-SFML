@@ -1330,7 +1330,7 @@ void updateRemoteFrame(const VideoBuffer& _bufferInfo, const unsigned int _clien
 
 void startUp()
 {
-  std::ifstream appID("appID.txt");
+  std::ifstream appID("appID");
   if (appID.is_open())
   {
     std::string line;

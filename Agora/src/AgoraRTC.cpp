@@ -1114,15 +1114,18 @@ namespace agoraYCE
         if (_deviceID == std::string(winName))
         {
           m_Window = windList.at(i);
-          ScreenCaptureParameters captureConfig;
-          captureConfig.dimensions.width = m_ScreenCaptureConfig.width;
-          captureConfig.dimensions.height = m_ScreenCaptureConfig.height;
-          captureConfig.bitrate = m_ScreenCaptureConfig.bitrate;
-          captureConfig.captureMouseCursor = m_ScreenCaptureConfig.captureMouseCursor;
-          captureConfig.frameRate = m_ScreenCaptureConfig.frameRate;
+          if (m_WindowCapture)
+          {
+            ScreenCaptureParameters captureConfig;
+            captureConfig.dimensions.width = m_ScreenCaptureConfig.width;
+            captureConfig.dimensions.height = m_ScreenCaptureConfig.height;
+            captureConfig.bitrate = m_ScreenCaptureConfig.bitrate;
+            captureConfig.captureMouseCursor = m_ScreenCaptureConfig.captureMouseCursor;
+            captureConfig.frameRate = m_ScreenCaptureConfig.frameRate;
 
-          m_RtcEngine->stopScreenCapture();
-          result = m_RtcEngine->startScreenCaptureByWindowId(m_Window, agora::rtc::Rectangle(), captureConfig);
+            m_RtcEngine->stopScreenCapture();
+            result = m_RtcEngine->startScreenCaptureByWindowId(m_Window, agora::rtc::Rectangle(), captureConfig);
+          }
         }
       }
 #endif
@@ -1398,6 +1401,7 @@ namespace agoraYCE
     // start/stop the feature
     if (_switchFlag)
     {
+      m_WindowCapture = false;
       ScreenCaptureParameters captureConfig;
       captureConfig.dimensions.width = _config.width;
       captureConfig.dimensions.height = _config.height;
@@ -1408,6 +1412,7 @@ namespace agoraYCE
     }
     else
     {
+      m_WindowCapture = false;
       result = m_RtcEngine->stopScreenCapture();
       m_VideoDeviceManager->setDevice(m_VideoRecording.c_str());
     }
@@ -1454,6 +1459,7 @@ namespace agoraYCE
     // start/stop the feature
     if (_switchFlag)
     {
+      m_WindowCapture = true;
       ScreenCaptureParameters captureConfig;
       captureConfig.dimensions.width = _config.width;
       captureConfig.dimensions.height = _config.height;
@@ -1464,6 +1470,7 @@ namespace agoraYCE
     }
     else
     {
+      m_WindowCapture = false;
       result = m_RtcEngine->stopScreenCapture();
       m_VideoDeviceManager->setDevice(m_VideoRecording.c_str());
     }
