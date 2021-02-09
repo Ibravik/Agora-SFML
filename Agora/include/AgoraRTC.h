@@ -363,6 +363,9 @@ namespace agoraYCE
    */
   class AGORAYCE_API VideoFrameObserver : public IVideoFrameObserver
   {
+public:
+    virtual ~VideoFrameObserver() = default;
+
     /**
      * Class variables---------------------------------------------------------------------------
      */
@@ -528,7 +531,7 @@ namespace agoraYCE
     VideoEncoderConfig()
       : width(640)
       , height(480)
-      , frameRate(15)
+      , frameRate(30)
       , minFrameRate(-1)
       , bitrate(0)
       , minBitrate(-1)
@@ -660,17 +663,17 @@ namespace agoraYCE
     /**
      * @brief   Pointer to the MediaEngine agora obj.
      */
-    agora::util::AutoPtr<IMediaEngine> m_MediaEngine = nullptr;
+    agora::util::AutoPtr<IMediaEngine> m_MediaEngine;
 
     /**
      * @brief   Pointer to the Video device manager.
      */
-    agora::util::AutoPtr<IVideoDeviceManager> m_VideoDeviceManager = nullptr;
+    agora::util::AutoPtr<IVideoDeviceManager> m_VideoDeviceManager;
 
     /**
      * @brief   Pointer to the Audio device manager.
      */
-    agora::util::AutoPtr<IAudioDeviceManager> m_AudioDeviceManager = nullptr;
+    agora::util::AutoPtr<IAudioDeviceManager> m_AudioDeviceManager;
 
     /**
      * @brief   Pointer to the Video device collection.
@@ -697,6 +700,8 @@ namespace agoraYCE
      */
 #if defined(_WIN32)
     HWND m_Window = nullptr;
+#else
+    void* m_Window = nullptr;
 #endif
 
     /**
@@ -899,6 +904,15 @@ namespace agoraYCE
      * @return  #int: Agora status code.
      */
     int SetCameraCapturerConfiguration(const CameraCapturerConfig& _config) const;
+
+    /**
+     * @brief   Set default remote video quality for all the user that enter to the channel.
+     *          The default quality is Hight
+     * @param   #eREMOTE_VIDEO_QUALITY: video quality types.
+     * @bug     No know Bugs.
+     * @return  #int: Agora status code.
+     */
+    int SetDefaultRemoteVideoQuality(const eREMOTE_VIDEO_QUALITY _qualityType) const;
 
     /**
      * @brief   Enable the super resolution video algorithm to specific user

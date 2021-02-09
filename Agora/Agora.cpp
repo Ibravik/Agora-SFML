@@ -66,6 +66,7 @@ struct channelSettings
     rtmpAudioBitrate(48),
     rtmpAudioChannels(0){}
 };
+ScreenCaptureConfig g_ScreenCapture;
 ImVector<channelSettings> g_ChannelTabs;
 std::vector<std::string> g_EncryptionTypes { 
   std::string("aes-128-xts"), 
@@ -581,8 +582,9 @@ void showChannelTab(bool& _isOpen, channelSettings& _channel)
           channelParams.encryptionKey = _channel.encryptionKey;
           channelParams.encryptionType = _channel.encryptionType;
           channelParams.clientRole = g_LocalUser.clientRole == 0 ? eCLIENT_ROLE::kBROADCASTER : eCLIENT_ROLE::kAUDIENCE;
+          agoraObj.SetDefaultRemoteVideoQuality(eREMOTE_VIDEO_QUALITY::kLOW);
           agoraObj.JoinChannel(channelParams);
-          
+                    
           g_ConnectedChannels++;
         }
         else
@@ -762,7 +764,6 @@ void showDeviceComboBox(eDEVICE_TYPE _deviceType, int& _index, std::vector<std::
 void videoConfig()
 {
   AgoraRTC& agoraObj = GetAgoraRTC();
-  static ScreenCaptureConfig screenCapture;
   static VideoEncoderConfig encoder;
 
   // enable screen share
@@ -773,10 +774,10 @@ void videoConfig()
       if (g_LocalUser.windowShare)
       {
         g_LocalUser.windowShare = false;
-        agoraObj.EnableWindowShare(g_LocalUser.windowShare, screenCapture);
+        agoraObj.EnableWindowShare(g_LocalUser.windowShare, g_ScreenCapture);
       }
     }
-    agoraObj.EnableScreenShare(g_LocalUser.screenShare, screenCapture);
+    agoraObj.EnableScreenShare(g_LocalUser.screenShare, g_ScreenCapture);
   }
 
   // enable window share
@@ -787,10 +788,10 @@ void videoConfig()
       if (g_LocalUser.screenShare)
       {
         g_LocalUser.screenShare = false;
-        agoraObj.EnableScreenShare(g_LocalUser.screenShare, screenCapture);
+        agoraObj.EnableScreenShare(g_LocalUser.screenShare, g_ScreenCapture);
       }
     }
-    agoraObj.EnableWindowShare(g_LocalUser.windowShare, screenCapture);
+    agoraObj.EnableWindowShare(g_LocalUser.windowShare, g_ScreenCapture);
   }
 
   // enable local video stream
@@ -802,7 +803,7 @@ void videoConfig()
 
   if (g_LocalUser.screenShare || g_LocalUser.windowShare)
   {
-    static int screenSize[2] = { screenCapture.width, screenCapture.height };
+    static int screenSize[2] = { g_ScreenCapture.width, g_ScreenCapture.height };
     if (g_LocalUser.windowShare)
     {
       static int windowIndex = 0;
@@ -824,28 +825,28 @@ void videoConfig()
       screenSize[0] = (screenSize[0] < 0 ? 0 : screenSize[0]);
       screenSize[1] = (screenSize[1] < 0 ? 0 : screenSize[1]);
     }
-    if (ImGui::InputInt("FPS", &screenCapture.frameRate))
+    if (ImGui::InputInt("FPS", &g_ScreenCapture.frameRate))
     {
-      screenCapture.frameRate = (screenCapture.frameRate < -1 ? -1 : screenCapture.frameRate);
+      g_ScreenCapture.frameRate = (g_ScreenCapture.frameRate < -1 ? -1 : g_ScreenCapture.frameRate);
     }
-    if (ImGui::InputInt("Video encoding bitrate", &screenCapture.bitrate))
+    if (ImGui::InputInt("Video encoding bitrate", &g_ScreenCapture.bitrate))
     {
-      screenCapture.bitrate = (screenCapture.bitrate < -1 ? -1 : screenCapture.bitrate);
+      g_ScreenCapture.bitrate = (g_ScreenCapture.bitrate < -1 ? -1 : g_ScreenCapture.bitrate);
     }
-    ImGui::Checkbox(screenCapture.captureMouseCursor ? "Disable Mouse Capture" : "Enable Mouse Capture", &screenCapture.captureMouseCursor);
+    ImGui::Checkbox(g_ScreenCapture.captureMouseCursor ? "Disable Mouse Capture" : "Enable Mouse Capture", &g_ScreenCapture.captureMouseCursor);
     ImGui::Separator();
     if (ImGui::Button("Apply Capture Settings"))
     {
-      screenCapture.width = screenSize[0];
-      screenCapture.height = screenSize[1];
-      agoraObj.SetScreenCaptureConfig(screenCapture);
+      g_ScreenCapture.width = screenSize[0];
+      g_ScreenCapture.height = screenSize[1];
+      agoraObj.SetScreenCaptureConfig(g_ScreenCapture);
     }
   }
   else
   {
     static int videoRecordingIndex = 0;
     static int videoSize[2] = { encoder.width, encoder.height };
-    static int frIndex = 3;
+    static int frIndex = 5;
     static int degIndex = 0;
     static int mirrIndex = 0;
     static int capIndex = 0;
@@ -956,6 +957,14 @@ void videoConfig()
     if (ImGui::Checkbox(g_EnableVideoTest ? "Disable device test" : "Enable device test", &g_EnableVideoTest))
     {
       agoraObj.EnableVideoRecordingTest(g_EnableVideoTest);
+      if (g_LocalUser.screenShare)
+      {
+        agoraObj.EnableScreenShare(g_LocalUser.screenShare, g_ScreenCapture);
+      }
+      if (g_LocalUser.windowShare)
+      {
+        agoraObj.EnableWindowShare(g_LocalUser.windowShare, g_ScreenCapture);
+      }
     }
 
     // video test image
@@ -1369,7 +1378,7 @@ void startUp()
   agoraObj.m_EventHandler.SetOnUserOffline(onUserOffline);
   agoraObj.m_EventHandler.SetOnRemoteVideoStats(onRemoteVideoStats);
   agoraObj.m_EventHandler.SetOnLocalVideoStats(onLocalVideoStats);
-  
+
   g_VideoRecordingDeviceList = agoraObj.GetDeviceList(eDEVICE_TYPE::kVideoRecording);
   g_AudioRecordingDeviceList = agoraObj.GetDeviceList(eDEVICE_TYPE::kAudioRecording);
   g_AudioPlaybackDeviceList = agoraObj.GetDeviceList(eDEVICE_TYPE::kAudioPlayback);

@@ -517,12 +517,14 @@ namespace agoraYCE
     // set a default window
     if (m_Window == nullptr)
     {
+#if defined(_WIN32)
       m_Window = HWND(1);
       auto windows = GetDeviceList(eDEVICE_TYPE::kWindow);
       if (!windows.empty())
       {
         SetCurrentDeviceByID(windows.at(0), eDEVICE_TYPE::kWindow);
       }
+#endif
     }
   }
 
@@ -1339,6 +1341,15 @@ namespace agoraYCE
     return m_RtcEngine->setCameraCapturerConfiguration(config);
   }
 
+  int AgoraRTC::SetDefaultRemoteVideoQuality(const eREMOTE_VIDEO_QUALITY _qualityType) const
+  {
+#if (ENABLE_AGORA_RTC == 0)
+    return 0;
+#endif
+    // set the default remote stream video type
+    return m_RtcEngine->setRemoteDefaultVideoStreamType(static_cast<REMOTE_VIDEO_STREAM_TYPE>(_qualityType));
+  }
+
   int AgoraRTC::EnableRemoteVideoSuperResolution(const unsigned int _userID, const bool _switchFlag) const
   {
 #if (ENABLE_AGORA_RTC == 0)
@@ -1416,9 +1427,18 @@ namespace agoraYCE
       result = m_RtcEngine->stopScreenCapture();
       m_VideoDeviceManager->setDevice(m_VideoRecording.c_str());
     }
-    if (result < 0)
+#elif defined(__APPLE__)
+    // start/stop the feature
+    if (_switchFlag)
     {
-      return result;
+      m_WindowCapture = false;
+      result = m_RtcEngine->startScreenCapture(0, 5, nullptr, 0);
+    }
+    else
+    {
+      m_WindowCapture = false;
+      result = m_RtcEngine->stopScreenCapture();
+      m_VideoDeviceManager->setDevice(m_VideoRecording.c_str());
     }
 #endif
     return result;
@@ -1658,13 +1678,6 @@ namespace agoraYCE
 
     // enable the dual stream mode
     result = m_RtcEngine->enableDualStreamMode(true);
-    if (result < 0)
-    {
-      return result;
-    }
-
-    // set the default remote stream video type
-    result = m_RtcEngine->setRemoteDefaultVideoStreamType(REMOTE_VIDEO_STREAM_LOW);
     if (result < 0)
     {
       return result;
