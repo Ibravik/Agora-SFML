@@ -363,7 +363,7 @@ namespace agoraYCE
    */
   class AGORAYCE_API VideoFrameObserver : public IVideoFrameObserver
   {
-public:
+  public:
     virtual ~VideoFrameObserver() = default;
 
     /**
@@ -387,6 +387,69 @@ public:
     bool onCaptureVideoFrame(VideoFrame& _videoFrame) override;
     bool onRenderVideoFrame(unsigned int _clientID, VideoFrame& _videoFrame) override;
     VIDEO_FRAME_TYPE getVideoFormatPreference() override { return FRAME_TYPE_RGBA; }
+  };
+
+  /**
+   * @brief   The follow struct only show an interface for the info and settings send by agora
+   *          every frame for the audio capture.
+   * @Note    I did not add comments since all the info are in the agora SDK code.
+   */
+  struct AudioBuffer
+  {
+    int type;
+    int samples;
+    int bytesPerSample;
+    int channels;
+    int samplesPerSec; 
+    void* buffer;
+    long long renderTimeMs;
+    int avsync_type;
+
+    AudioBuffer() :
+      type(0),
+      samples(0),
+      bytesPerSample(0),
+      channels(0),
+      samplesPerSec(0),
+      buffer(nullptr),
+      renderTimeMs(0),
+      avsync_type(0) {}
+  };
+
+  /**
+   * @brief   The porpoise of the following class is to allow to take the agora video local and
+   *          remote buffers, putting in a unreal texture to use it.
+   * @Note    You can find the description for all override functions in the parent class. Also,
+   *          not all the available events are exposed here, fell free to add another one in
+   *          necessary cases.
+   */
+  class AGORAYCE_API AudioFrameObserver : public IAudioFrameObserver
+  {
+  public:
+    virtual ~AudioFrameObserver() = default;
+
+    /**
+     * Class variables---------------------------------------------------------------------------
+     */
+  private:
+    std::function<void(const AudioBuffer& _bufferInfo)> m_OnRecordAudioCallback = nullptr;
+    std::function<void(const AudioBuffer& _bufferInfo, const unsigned int _clientID)> m_OnPlayAudioCallback = nullptr;
+
+    /**
+     * Class set functions-----------------------------------------------------------------------
+     */
+  public:
+    void SetOnRecordAudioCallback(std::function<void(const AudioBuffer& _bufferInfo)> _callback);
+    void SetOnPlayAudioCallback(std::function<void(const AudioBuffer& _bufferInfo, const unsigned int _clientID)> _callback);
+
+    /**
+     * Class functions override------------------------------------------------------------------
+     */
+  private:
+    bool onRecordAudioFrame(AudioFrame& _audioFrame) override;
+    bool onPlaybackAudioFrameBeforeMixing(unsigned int _clientID, AudioFrame& _audioFrame) override;
+    bool onPlaybackAudioFrame(AudioFrame& audioFrame) override { return true; };
+    bool onMixedAudioFrame(AudioFrame& audioFrame) override { return true; };
   };
 
   /**
@@ -539,6 +602,18 @@ public:
       , degradationPreference(0)
       , mirrorMode(0)
     {}
+    VideoEncoderConfig(int _width, int _height, int _frameRate, int _minFrameRate, int _bitrate, 
+             int _minBitrate, int _orientationMode, int _degradationPreference, int _mirrorMode)
+      : width(_width)
+      , height(_height)
+      , frameRate(_frameRate)
+      , minFrameRate(_minFrameRate)
+      , bitrate(_bitrate)
+      , minBitrate(_minBitrate)
+      , orientationMode(_orientationMode)
+      , degradationPreference(_degradationPreference)
+      , mirrorMode(_mirrorMode)
+    {}
   };
 
   /**
@@ -653,6 +728,12 @@ public:
      *          send by agora(local/remote).
      */
     VideoFrameObserver m_VideoObserver;
+
+    /**
+     * @brief   Current audio observer. This object set the functionality to use the buffers
+     *          send by agora(local/remote).
+     */
+    AudioFrameObserver m_AudioObserver;
 
   private:
     /**
@@ -852,7 +933,18 @@ public:
      * @bug     No know Bugs.
      * @return  #int: Agora status code.
      */
-    int SetVideoEncoderConfiguration(const VideoEncoderConfig& _config) const;
+    int SetHighVideoEncoderConfiguration(const VideoEncoderConfig& _config) const;
+
+    /**
+     * @brief   The parameters specified in this method are the minimum values under ideal
+     *          network conditions. If the video engine cannot render the video using the
+     *          specified parameters due to poor network conditions, the parameters further
+     *          down the list are considered until a successful configuration is found.
+     * @param   #VideoEncoderConfig: Video encoding settings
+     * @bug     No know Bugs.
+     * @return  #int: Agora status code.
+     */
+    int SetLowVideoEncoderConfiguration(const VideoEncoderConfig& _config) const;
 
     /**
      * @brief   Updates the screen sharing parameters.
@@ -860,7 +952,7 @@ public:
      * @bug     No know Bugs.
      * @return  #int: Agora status code.
      */
-    int SetScreenCaptureConfig(const ScreenCaptureConfig& _config) const;
+    int SetScreenEncoderConfiguration(const ScreenCaptureConfig& _config) const;
 
     /**
      * @brief   Sets the role of the user, such as a host or an audience (default), before/

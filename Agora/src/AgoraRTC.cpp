@@ -421,6 +421,70 @@ namespace agoraYCE
     return true;
   }
 
+  void AudioFrameObserver::SetOnRecordAudioCallback(std::function<void(const AudioBuffer& _bufferInfo)> _callback)
+  {
+    m_OnRecordAudioCallback = std::move(_callback);
+  }
+
+  void AudioFrameObserver::SetOnPlayAudioCallback(std::function<void(const AudioBuffer& _bufferInfo, const unsigned int _clientID)> _callback)
+  {
+    m_OnPlayAudioCallback = std::move(_callback);
+  }
+
+  bool AudioFrameObserver::onRecordAudioFrame(AudioFrame& _audioFrame)
+  {
+    // Check if the buffer is a valid one
+    if (_audioFrame.buffer == nullptr)
+    {
+      return false;
+    }
+
+    // set the needed info for render
+    AudioBuffer audioBuffer;
+    audioBuffer.avsync_type = _audioFrame.avsync_type;
+    audioBuffer.buffer = _audioFrame.buffer;
+    audioBuffer.bytesPerSample = _audioFrame.bytesPerSample;
+    audioBuffer.channels = _audioFrame.channels;
+    audioBuffer.renderTimeMs = _audioFrame.renderTimeMs;
+    audioBuffer.samples = _audioFrame.samples;
+    audioBuffer.samplesPerSec = _audioFrame.samplesPerSec;
+    audioBuffer.type = _audioFrame.type;
+
+    // send the buffer to a better place :C
+    if (m_OnRecordAudioCallback)
+    {
+      m_OnRecordAudioCallback(audioBuffer);
+    }
+    return true;
+  }
+
+  bool AudioFrameObserver::onPlaybackAudioFrameBeforeMixing(unsigned int _clientID, AudioFrame& _audioFrame)
+  {
+    // Check if the buffer is a valid one
+    if (_audioFrame.buffer == nullptr)
+    {
+      return false;
+    }
+
+    // set the needed info for render
+    AudioBuffer audioBuffer;
+    audioBuffer.avsync_type = _audioFrame.avsync_type;
+    audioBuffer.buffer = _audioFrame.buffer;
+    audioBuffer.bytesPerSample = _audioFrame.bytesPerSample;
+    audioBuffer.channels = _audioFrame.channels;
+    audioBuffer.renderTimeMs = _audioFrame.renderTimeMs;
+    audioBuffer.samples = _audioFrame.samples;
+    audioBuffer.samplesPerSec = _audioFrame.samplesPerSec;
+    audioBuffer.type = _audioFrame.type;
+
+    // send the buffer to a better place :C
+    if (m_OnPlayAudioCallback)
+    {
+      m_OnPlayAudioCallback(audioBuffer, _clientID);
+    }
+    return true;
+  }
+
   AgoraRTC::AgoraRTC()
   {
 
@@ -481,7 +545,7 @@ namespace agoraYCE
 
     // create the video device collection
     m_VideoRecordingCollection = m_VideoDeviceManager->enumerateVideoDevices();
-    if(m_VideoRecording.empty())
+    if (m_VideoRecording.empty())
     {
       m_VideoRecording = std::string("Not Set");
       m_VideoRecording = GetDeviceID(GetCurrentDevice(eDEVICE_TYPE::kVideoRecording), eDEVICE_TYPE::kVideoRecording);
@@ -564,6 +628,13 @@ namespace agoraYCE
 
     // register the video observer
     result = m_MediaEngine->registerVideoFrameObserver(&m_VideoObserver);
+    if (result < 0)
+    {
+      return result;
+    }
+
+    // register the audio observer
+    result = m_MediaEngine->registerAudioFrameObserver(&m_AudioObserver);
     if (result < 0)
     {
       return result;
@@ -1178,7 +1249,7 @@ namespace agoraYCE
     return m_AudioDeviceManager->setPlaybackDeviceVolume(int(volume * 255));
   }
 
-  int AgoraRTC::SetVideoEncoderConfiguration(const VideoEncoderConfig& _config) const
+  int AgoraRTC::SetHighVideoEncoderConfiguration(const VideoEncoderConfig& _config) const
   {
 #if (ENABLE_AGORA_RTC == 0)
     return 0;
@@ -1198,14 +1269,40 @@ namespace agoraYCE
     config.bitrate = _config.bitrate;
     config.degradationPreference = static_cast<DEGRADATION_PREFERENCE>(_config.degradationPreference);
     config.minBitrate = _config.minBitrate;
-    config.minFrameRate = _config.minBitrate;
+    config.minFrameRate = _config.minFrameRate;
     config.mirrorMode = static_cast<VIDEO_MIRROR_MODE_TYPE>(_config.mirrorMode);
 
     // set the config in engine
     return m_RtcEngine->setVideoEncoderConfiguration(config);
   }
 
-  int AgoraRTC::SetScreenCaptureConfig(const ScreenCaptureConfig& _config) const
+  int AgoraRTC::SetLowVideoEncoderConfiguration(const VideoEncoderConfig& _config) const
+  {
+#if (ENABLE_AGORA_RTC == 0)
+    return 0;
+#endif
+
+    // avoid bad calls if the engine are not ready
+    if (m_RtcEngine == nullptr)
+    {
+      return -1;
+    }
+
+    std::string config("{\"che.video.lowBitRateStreamParameter\":{\"width\":");
+    config += std::to_string(_config.width);
+    config += std::string(", \"height\":");
+    config += std::to_string(_config.height);
+    config += std::string(",\"frameRate\":");
+    config += std::to_string(_config.frameRate);
+    config += std::string(",\"bitRate\":");
+    config += std::to_string(_config.bitrate);
+    config += std::string("}}\"");
+
+    // set the config in engine
+    return m_RtcEngine->setParameters(config.c_str());
+  }
+
+  int AgoraRTC::SetScreenEncoderConfiguration(const ScreenCaptureConfig& _config) const
   {
 #if (ENABLE_AGORA_RTC == 0)
     return 0;

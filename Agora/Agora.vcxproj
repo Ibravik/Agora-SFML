@@ -100,7 +100,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>AGORA_TOOL;IMGUI_SFML;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(DEVLIBS)sfml-2.5.1\include\;$(DEVLIBS)imgui-master\;$(DEVLIBS)imgui-sfml-master\;$(DEVLIBS)agora-3.1.2\libs\include\;$(SolutionDir)agora\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DEVLIBS)sfml-2.5.1\include\;$(DEVLIBS)imgui-1.8\;$(DEVLIBS)imgui-sfml-2.1\;$(DEVLIBS)agora-3.1.2\libs\include\;$(SolutionDir)agora\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -118,7 +118,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>AGORA_TOOL;IMGUI_SFML;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(DEVLIBS)sfml-2.5.1\include\;$(DEVLIBS)imgui-master\;$(DEVLIBS)imgui-sfml-master\;$(DEVLIBS)agora-3.1.2\libs\include\;$(SolutionDir)agora\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DEVLIBS)sfml-2.5.1\include\;$(DEVLIBS)imgui-1.8\;$(DEVLIBS)imgui-sfml-2.1\;$(DEVLIBS)agora-3.1.2\libs\include\;$(SolutionDir)agora\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -136,7 +136,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>AGORA_TOOL;IMGUI_SFML;_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(DEVLIBS)sfml-2.5.1\include\;$(DEVLIBS)imgui-master\;$(DEVLIBS)imgui-sfml-master\;$(DEVLIBS)agora-3.1.2\libs\include\;$(SolutionDir)agora\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DEVLIBS)sfml-2.5.1\include\;$(DEVLIBS)imgui-1.8\;$(DEVLIBS)imgui-sfml-2.1\;$(DEVLIBS)agora-3.1.2\libs\include\;$(SolutionDir)agora\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -154,7 +154,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>AGORA_TOOL;IMGUI_SFML;_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(DEVLIBS)sfml-2.5.1\include\;$(DEVLIBS)imgui-master\;$(DEVLIBS)imgui-sfml-master\;$(DEVLIBS)agora-3.1.2\libs\include\;$(SolutionDir)agora\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DEVLIBS)sfml-2.5.1\include\;$(DEVLIBS)imgui-1.8\;$(DEVLIBS)imgui-sfml-2.1\;$(DEVLIBS)agora-3.1.2\libs\include\;$(SolutionDir)agora\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -167,13 +167,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Externals\imgui-master\imgui.cpp" />
-    <ClCompile Include="..\..\Externals\imgui-master\imgui_demo.cpp" />
-    <ClCompile Include="..\..\Externals\imgui-master\imgui_draw.cpp" />
-    <ClCompile Include="..\..\Externals\imgui-master\imgui_tables.cpp" />
-    <ClCompile Include="..\..\Externals\imgui-master\imgui_widgets.cpp" />
-    <ClCompile Include="..\..\Externals\imgui-master\misc\cpp\imgui_stdlib.cpp" />
-    <ClCompile Include="..\..\Externals\imgui-sfml-master\imgui-SFML.cpp" />
+    <ClCompile Include="..\..\Externals\imgui-1.8\imgui.cpp" />
+    <ClCompile Include="..\..\Externals\imgui-1.8\imgui_draw.cpp" />
+    <ClCompile Include="..\..\Externals\imgui-1.8\imgui_tables.cpp" />
+    <ClCompile Include="..\..\Externals\imgui-1.8\imgui_widgets.cpp" />
+    <ClCompile Include="..\..\Externals\imgui-sfml-2.1\imgui-SFML.cpp" />
     <ClCompile Include="Agora.cpp" />
     <ClCompile Include="src\AgoraRTC.cpp" />
   </ItemGroup>

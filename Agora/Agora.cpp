@@ -22,6 +22,10 @@ sf::RenderWindow g_MainWindow;
 sf::Clock g_DeltaClock;
 sf::Clock g_Time;
 
+// full screen window
+bool g_Fullscreen = false;
+unsigned int g_FullscreenID = 0;
+
 // Grid window settings
 bool g_GridFlag = true;
 
@@ -99,7 +103,7 @@ std::vector<int> g_FrameRate{
   1, 7, 10, 15, 24, 30, 60
 };
 std::vector<std::string> g_DegradationPreference{
-  "Maintain Quality" , "Maintain Framerate", "Maintain Balanced"
+  "Quality" , "Framerate", "Balanced"
 };
 std::vector<std::string> g_VideoMirror{
   "Mirror Mode Auto", "Mirror Mode Enabled", "Mirror Mode Disabled"
@@ -244,6 +248,12 @@ void onUserJoined(const UserJoinInfo& _info)
   log(std::string("-onUserJoined()- uid:") + std::to_string(_info.uid) +
       std::string(" elapsed:") + std::to_string(_info.elapsed) +
       std::string("\n"));
+
+  // add the frame buffer for the remote user
+  if (g_RemoteUser.find(_info.uid) == g_RemoteUser.end())
+  {
+    g_RemoteUser.emplace(_info.uid, userInfo());
+  }
 }
 
 void onActiveSpeaker(const unsigned int _uid)
@@ -320,6 +330,88 @@ void dispatchEvent()
       g_MainWindow.close();
     }
   }
+}
+
+void fullscreen()
+{
+  ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+  ImGui::SetNextWindowSize(g_MainWindow.getSize(), ImGuiCond_Always);
+
+  // show device settings window
+  if (ImGui::Begin((std::string("FullScreen") + std::to_string(g_FullscreenID)).c_str(), &g_Fullscreen, 
+      ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings))
+  {
+    if (g_RemoteUser.find(g_FullscreenID) != g_RemoteUser.end())
+    {
+      AgoraRTC& agoraObj = GetAgoraRTC();
+      static sf::Color videoUnmute(0xffffffff);
+      static sf::Color videoMute(0x222222ff);
+      static sf::Color talk(0x00ff00ff);
+      static sf::Color audioUnmute(0x000000ff);
+      static sf::Color audioMute(0xff0000ff);
+      auto& remoteUser = g_RemoteUser[g_FullscreenID];
+
+      // remote frame
+      auto& ruid = g_FullscreenID;
+      std::string desc = std::string("ID: ");
+      desc += std::to_string(ruid);
+      desc += std::string("(");
+      desc += std::to_string(remoteUser.width);
+      desc += std::string("x");
+      desc += std::to_string(remoteUser.height);
+      desc += std::string(") ");
+      desc += std::to_string(remoteUser.bitrate);
+      desc += std::string("kb ");
+      desc += std::to_string(remoteUser.fps);
+      desc += std::string("fps");
+      
+      // fullscreen image
+      ImGui::Image(remoteUser.frame.texture, sf::Vector2f(g_MainWindow.getSize().x * 0.80f, g_MainWindow.getSize().y * 0.80f),
+                   (remoteUser.videoStreamMute ? videoMute : videoUnmute),
+                   (remoteUser.audioStreamMute ? audioMute : (g_ChannelTabs[0].activeSpeaker == g_FullscreenID ? talk : audioUnmute)));
+      ImGui::Text(desc.c_str());
+
+      // Main frame settings
+      ImGui::PushID(g_FullscreenID);
+      if (ImGui::Checkbox(remoteUser.audioStreamMute ? "Unmute Audio" : "Mute Audio", &remoteUser.audioStreamMute))
+      {
+        agoraObj.MuteRemoteAudioStream(g_FullscreenID, remoteUser.audioStreamMute);
+      }
+      ImGui::SameLine();
+      if (ImGui::Checkbox(remoteUser.videoStreamMute ? "Unmute Video" : "Mute Video", &remoteUser.videoStreamMute))
+      {
+        agoraObj.MuteRemoteVideoStream(g_FullscreenID, remoteUser.videoStreamMute);
+      }
+      if (ImGui::Button(remoteUser.videoStreamQuality ? "Low Video Quality" : "High Video Quality"))
+      {
+        remoteUser.videoStreamQuality = !remoteUser.videoStreamQuality;
+        agoraObj.SetRemoteVideoQuality(g_FullscreenID, remoteUser.videoStreamQuality ? eREMOTE_VIDEO_QUALITY::kHIGH : eREMOTE_VIDEO_QUALITY::kLOW);
+      }
+      ImGui::SameLine();
+      if (ImGui::Button(remoteUser.videoStreamPriority ? "Low Video Priority" : "High Video Priority"))
+      {
+        remoteUser.videoStreamPriority = !remoteUser.videoStreamPriority;
+        agoraObj.SetRemoteVideoPriority(g_FullscreenID, remoteUser.videoStreamPriority ? eREMOTE_VIDEO_PRIORITY::kHIGH : eREMOTE_VIDEO_PRIORITY::kNORMAL);
+      }
+      if (ImGui::Button(remoteUser.videoSuperResolution ? "Turn OFF Super Resolution" : "Turn ON Super Resolution"))
+      {
+        remoteUser.videoSuperResolution = !remoteUser.videoSuperResolution;
+        agoraObj.EnableRemoteVideoSuperResolution(g_FullscreenID, remoteUser.videoSuperResolution);
+      }
+      ImGui::PopID();
+    }
+    else
+    {
+      g_Fullscreen = false;
+      g_FullscreenID = 0;
+    }
+  }
+  else
+  {
+    g_Fullscreen = false;
+    g_FullscreenID = 0;
+  }
+  ImGui::End();
 }
 
 void consoleWindow()
@@ -764,7 +856,8 @@ void showDeviceComboBox(eDEVICE_TYPE _deviceType, int& _index, std::vector<std::
 void videoConfig()
 {
   AgoraRTC& agoraObj = GetAgoraRTC();
-  static VideoEncoderConfig encoder;
+  static VideoEncoderConfig highEncoder;
+  static VideoEncoderConfig lowEncoder(320, 180, 7, 0, 140, 0, 0, 0, 0);
 
   // enable screen share
   if (ImGui::Checkbox(g_LocalUser.screenShare ? "Disable Screen Share" : "Enable Screen Share", &g_LocalUser.screenShare))
@@ -839,114 +932,156 @@ void videoConfig()
     {
       g_ScreenCapture.width = screenSize[0];
       g_ScreenCapture.height = screenSize[1];
-      agoraObj.SetScreenCaptureConfig(g_ScreenCapture);
+      agoraObj.SetScreenEncoderConfiguration(g_ScreenCapture);
     }
   }
   else
   {
     static int videoRecordingIndex = 0;
-    static int videoSize[2] = { encoder.width, encoder.height };
-    static int frIndex = 5;
+    static int frHighIndex = 5;
+    static int frLowIndex = 1;
     static int degIndex = 0;
     static int mirrIndex = 0;
     static int capIndex = 0;
 
-    // video settings
+    // video settings device
     showDeviceComboBox(eDEVICE_TYPE::kVideoRecording, videoRecordingIndex, g_VideoRecordingDeviceList);
-    if (ImGui::InputInt2("Video frame dimensions(w/h)", videoSize))
-    {
-      videoSize[0] = (videoSize[0] < 0 ? 0 : videoSize[0]);
-      videoSize[1] = (videoSize[1] < 0 ? 0 : videoSize[1]);
-      encoder.width = videoSize[0];
-      encoder.height = videoSize[1];
-    }
-    if (ImGui::BeginCombo("FPS", std::to_string(g_FrameRate.at(frIndex)).c_str()))
-    {
-      for (int i = 0; i < g_FrameRate.size(); i++)
-      {
-        const bool isFocus = (frIndex == i);
-        if (ImGui::Selectable(std::to_string(g_FrameRate.at(i)).c_str(), isFocus))
-        {
-          frIndex = i;
-        }
-        if (isFocus)
-        {
-          ImGui::SetItemDefaultFocus();
-        }
-      }
-      ImGui::EndCombo();
-    }
-    if (ImGui::InputInt("Minimum frame rate", &encoder.minFrameRate))
-    {
-      encoder.minFrameRate = (encoder.minFrameRate < -1 ? -1 : encoder.minFrameRate);
-    }
-    if (ImGui::InputInt("Video encoding bitrate", &encoder.bitrate))
-    {
-      encoder.bitrate = (encoder.bitrate < -1 ? -1 : encoder.bitrate);
-    }
-    if (ImGui::InputInt("Minimum encoding bitrate ", &encoder.minBitrate))
-    {
-      encoder.minBitrate = (encoder.minBitrate < -1 ? -1 : encoder.minBitrate);
-    }
-    if (ImGui::BeginCombo("Degradation Preference", g_DegradationPreference.at(degIndex).c_str()))
-    {
-      for (int i = 0; i < g_DegradationPreference.size(); i++)
-      {
-        const bool isFocus = (degIndex == i);
-        if (ImGui::Selectable(g_DegradationPreference.at(i).c_str(), isFocus))
-        {
-          degIndex = i;
-        }
-        if (isFocus)
-        {
-          ImGui::SetItemDefaultFocus();
-        }
-      }
-      ImGui::EndCombo();
-    }
-    if (ImGui::BeginCombo("Mirror Mode", g_VideoMirror.at(mirrIndex).c_str()))
-    {
-      for (int i = 0; i < g_VideoMirror.size(); i++)
-      {
-        const bool isFocus = (mirrIndex == i);
-        if (ImGui::Selectable(g_VideoMirror.at(i).c_str(), isFocus))
-        {
-          mirrIndex = i;
-        }
-        if (isFocus)
-        {
-          ImGui::SetItemDefaultFocus();
-        }
-      }
-      ImGui::EndCombo();
-    }
-    if (ImGui::BeginCombo("Camera capture config", g_CaptureConfig.at(capIndex).c_str()))
-    {
-      for (int i = 0; i < g_CaptureConfig.size(); i++)
-      {
-        const bool isFocus = (capIndex == i);
-        if (ImGui::Selectable(g_CaptureConfig.at(i).c_str(), isFocus))
-        {
-          capIndex = i;
 
-          CameraCapturerConfig config;
-          config.preference = capIndex;
-          agoraObj.SetCameraCapturerConfiguration(config);
-        }
-        if (isFocus)
-        {
-          ImGui::SetItemDefaultFocus();
-        }
+    // High video encoder config
+    if (ImGui::CollapsingHeader("High video encoder config"))
+    {
+      static int videoSize[2] = { highEncoder.width, highEncoder.height };
+      if (ImGui::InputInt2("Video frame dimensions(w/h)", videoSize))
+      {
+        videoSize[0] = (videoSize[0] < 0 ? 0 : videoSize[0]);
+        videoSize[1] = (videoSize[1] < 0 ? 0 : videoSize[1]);
+        highEncoder.width = videoSize[0];
+        highEncoder.height = videoSize[1];
       }
-      ImGui::EndCombo();
+      if (ImGui::BeginCombo("FPS", std::to_string(g_FrameRate.at(frHighIndex)).c_str()))
+      {
+        for (int i = 0; i < g_FrameRate.size(); i++)
+        {
+          const bool isFocus = (frHighIndex == i);
+          if (ImGui::Selectable(std::to_string(g_FrameRate.at(i)).c_str(), isFocus))
+          {
+            frHighIndex = i;
+          }
+          if (isFocus)
+          {
+            ImGui::SetItemDefaultFocus();
+          }
+        }
+        ImGui::EndCombo();
+      }
+      if (ImGui::InputInt("Minimum frame rate", &highEncoder.minFrameRate))
+      {
+        highEncoder.minFrameRate = (highEncoder.minFrameRate < -1 ? -1 : highEncoder.minFrameRate);
+      }
+      if (ImGui::InputInt("Video encoding bitrate", &highEncoder.bitrate))
+      {
+        highEncoder.bitrate = (highEncoder.bitrate < -1 ? -1 : highEncoder.bitrate);
+      }
+      if (ImGui::InputInt("Minimum encoding bitrate ", &highEncoder.minBitrate))
+      {
+        highEncoder.minBitrate = (highEncoder.minBitrate < -1 ? -1 : highEncoder.minBitrate);
+      }
+      if (ImGui::BeginCombo("Degradation Preference", g_DegradationPreference.at(degIndex).c_str()))
+      {
+        for (int i = 0; i < g_DegradationPreference.size(); i++)
+        {
+          const bool isFocus = (degIndex == i);
+          if (ImGui::Selectable(g_DegradationPreference.at(i).c_str(), isFocus))
+          {
+            degIndex = i;
+          }
+          if (isFocus)
+          {
+            ImGui::SetItemDefaultFocus();
+          }
+        }
+        ImGui::EndCombo();
+      }
+    }
+    if (ImGui::CollapsingHeader("Low video encoder config"))
+    {
+      static int videoSize[2] = { lowEncoder.width, lowEncoder.height };
+      if (ImGui::InputInt2("Video frame dimensions(w/h)", videoSize))
+      {
+        videoSize[0] = (videoSize[0] < 0 ? 0 : videoSize[0]);
+        videoSize[1] = (videoSize[1] < 0 ? 0 : videoSize[1]);
+        lowEncoder.width = videoSize[0];
+        lowEncoder.height = videoSize[1];
+      }
+      if (ImGui::BeginCombo("FPS", std::to_string(g_FrameRate.at(frLowIndex)).c_str()))
+      {
+        for (int i = 0; i < g_FrameRate.size(); i++)
+        {
+          const bool isFocus = (frLowIndex == i);
+          if (ImGui::Selectable(std::to_string(g_FrameRate.at(i)).c_str(), isFocus))
+          {
+            frLowIndex = i;
+          }
+          if (isFocus)
+          {
+            ImGui::SetItemDefaultFocus();
+          }
+        }
+        ImGui::EndCombo();
+      }
+      if (ImGui::InputInt("Video encoding bitrate", &lowEncoder.bitrate))
+      {
+        lowEncoder.bitrate = (lowEncoder.bitrate < -1 ? -1 : lowEncoder.bitrate);
+      }
+    }
+    if (ImGui::CollapsingHeader("Local video config"))
+    {
+      if (ImGui::BeginCombo("Mirror Mode", g_VideoMirror.at(mirrIndex).c_str()))
+      {
+        for (int i = 0; i < g_VideoMirror.size(); i++)
+        {
+          const bool isFocus = (mirrIndex == i);
+          if (ImGui::Selectable(g_VideoMirror.at(i).c_str(), isFocus))
+          {
+            mirrIndex = i;
+          }
+          if (isFocus)
+          {
+            ImGui::SetItemDefaultFocus();
+          }
+        }
+        ImGui::EndCombo();
+      }
+      if (ImGui::BeginCombo("Camera capture config", g_CaptureConfig.at(capIndex).c_str()))
+      {
+        for (int i = 0; i < g_CaptureConfig.size(); i++)
+        {
+          const bool isFocus = (capIndex == i);
+          if (ImGui::Selectable(g_CaptureConfig.at(i).c_str(), isFocus))
+          {
+            capIndex = i;
+
+            CameraCapturerConfig config;
+            config.preference = capIndex;
+            agoraObj.SetCameraCapturerConfiguration(config);
+          }
+          if (isFocus)
+          {
+            ImGui::SetItemDefaultFocus();
+          }
+        }
+        ImGui::EndCombo();
+      }
     }
     ImGui::Separator();
     if (ImGui::Button("Apply Encoding Settings"))
     {
-      encoder.degradationPreference = degIndex;
-      encoder.frameRate = g_FrameRate.at(frIndex);
-      encoder.mirrorMode = mirrIndex;
-      agoraObj.SetVideoEncoderConfiguration(encoder);
+      highEncoder.degradationPreference = degIndex;
+      highEncoder.frameRate = g_FrameRate.at(frHighIndex);
+      highEncoder.mirrorMode = mirrIndex;
+      agoraObj.SetHighVideoEncoderConfiguration(highEncoder);
+      lowEncoder.frameRate = g_FrameRate.at(frLowIndex);
+      agoraObj.SetLowVideoEncoderConfiguration(lowEncoder);
     }
   }
   ImGui::Separator();
@@ -1154,7 +1289,7 @@ void gridWindow()
       {
         agoraObj.MuteLocalVideoStream(g_LocalUser.videoStreamMute);
       }
-
+    
       // Grid
       if (ImGui::BeginTable("Remote Frame", 4, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_SizingFixedSame))
       {
@@ -1211,6 +1346,12 @@ void gridWindow()
           {
             remoteUser.second.videoSuperResolution = !remoteUser.second.videoSuperResolution;
             agoraObj.EnableRemoteVideoSuperResolution(remoteUser.first, remoteUser.second.videoSuperResolution);
+          }
+          ImGui::SameLine();
+          if (ImGui::Button("Fullscreen"))
+          {
+            g_FullscreenID = remoteUser.first;
+            g_Fullscreen = true;
           }
           ImGui::PopID();
 
@@ -1270,6 +1411,10 @@ void setUISettings()
     channelSettingWindow();
   }
   consoleWindow();
+  if (g_Fullscreen)
+  {
+    fullscreen();
+  }
 }
 
 void updateLocalFrame(const VideoBuffer& _bufferInfo)
@@ -1306,7 +1451,7 @@ void updateRemoteFrame(const VideoBuffer& _bufferInfo, const unsigned int _clien
   // add the frame buffer for the remote user
   if (g_RemoteUser.find(_clientID) == g_RemoteUser.end())
   {
-    g_RemoteUser.emplace(_clientID, userInfo());
+    return;
   }
   auto& remoteFrame = g_RemoteUser.at(_clientID);
 
