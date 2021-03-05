@@ -74,3 +74,6 @@ bin/agoraTool/sfml-system-2.dll
 bin/agoraTool/sfml-system-d-2.dll
 bin/agoraTool/sfml-window-2.dll
 bin/agoraTool/sfml-window-d-2.dll
+bin/x64/appID
+bin/x64/imgui.ini
+bin/x64/log
